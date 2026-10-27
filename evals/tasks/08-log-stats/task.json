@@ -1,0 +1,1 @@
+{"id":"08-log-stats","type":"refactor","description":"Extract log parsing and aggregation without changing behavior","testCount":7}

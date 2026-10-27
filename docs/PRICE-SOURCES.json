@@ -1,0 +1,16 @@
+{
+  "capturedOn": "2026-10-28",
+  "catalogCommand": "devin models list --format json",
+  "catalogSubset": [
+    {"model_uid": "swe-2-medium", "cost_tier": "Free"},
+    {"model_uid": "swe-2-medium-lightning", "cost_tier": "High cost", "cost_summary": "$1 / 1M Input · $0.1 / 1M Cached input · $5 / 1M Output"},
+    {"model_uid": "gpt-6-1-sol-medium", "cost_tier": "Med cost", "cost_summary": "$2 / 1M Input · $0.1 / 1M Cached input · $10 / 1M Output"},
+    {"model_uid": "glm-5-3-high", "cost_tier": "Low cost", "cost_summary": "$1.4 / 1M Input · $0.26 / 1M Cached input · $4.4 / 1M Output"}
+  ],
+  "configuredPiRates": {
+    "magpie/codex/gpt-6.1-sol": {"input": 2, "cacheRead": 0.1, "cacheWrite": 2.5, "output": 10},
+    "magpie/devin/swe-2": {"input": 0, "cacheRead": 0, "cacheWrite": 0, "output": 0},
+    "magpie/zcode/GLM-5.3": {"input": 1.19516, "cacheRead": 0.29879, "cacheWrite": 0, "output": 4.18306}
+  },
+  "interpretation": "evals/pricing.json uses the configured Pi rates. SWE-2 zero pricing is an explicit ordinary-Free-tier forwarding assumption, not a verified magpie bill. The Lightning rate is evidence for a different variant, not substituted for ordinary SWE-2. GLM catalog and configured gateway estimates differ; the configured estimate is used consistently for solo and sidekick."
+}

@@ -1,0 +1,234 @@
+[
+  {
+    "task": "01-clamp",
+    "type": "short",
+    "valid": true,
+    "template": {
+      "expected": 5,
+      "total": 5,
+      "passed": 0,
+      "failed": 5,
+      "skipped": 0,
+      "cancelled": 0,
+      "allPassed": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "ratio": 0
+    },
+    "reference": {
+      "expected": 5,
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "allPassed": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "ratio": 1
+    }
+  },
+  {
+    "task": "02-slug",
+    "type": "short",
+    "valid": true,
+    "template": {
+      "expected": 5,
+      "total": 5,
+      "passed": 0,
+      "failed": 5,
+      "skipped": 0,
+      "cancelled": 0,
+      "allPassed": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "ratio": 0
+    },
+    "reference": {
+      "expected": 5,
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "allPassed": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "ratio": 1
+    }
+  },
+  {
+    "task": "03-issue-summary",
+    "type": "medium",
+    "valid": true,
+    "template": {
+      "expected": 8,
+      "total": 8,
+      "passed": 1,
+      "failed": 7,
+      "skipped": 0,
+      "cancelled": 0,
+      "allPassed": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "ratio": 0.125
+    },
+    "reference": {
+      "expected": 8,
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "allPassed": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "ratio": 1
+    }
+  },
+  {
+    "task": "04-cart",
+    "type": "medium",
+    "valid": true,
+    "template": {
+      "expected": 8,
+      "total": 8,
+      "passed": 0,
+      "failed": 8,
+      "skipped": 0,
+      "cancelled": 0,
+      "allPassed": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "ratio": 0
+    },
+    "reference": {
+      "expected": 8,
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "allPassed": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "ratio": 1
+    }
+  },
+  {
+    "task": "05-event-bus",
+    "type": "medium",
+    "valid": true,
+    "template": {
+      "expected": 8,
+      "total": 8,
+      "passed": 2,
+      "failed": 6,
+      "skipped": 0,
+      "cancelled": 0,
+      "allPassed": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "ratio": 0.25
+    },
+    "reference": {
+      "expected": 8,
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "allPassed": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "ratio": 1
+    }
+  },
+  {
+    "task": "06-ttl-cache",
+    "type": "bugfix",
+    "valid": true,
+    "template": {
+      "expected": 7,
+      "total": 7,
+      "passed": 0,
+      "failed": 7,
+      "skipped": 0,
+      "cancelled": 0,
+      "allPassed": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "ratio": 0
+    },
+    "reference": {
+      "expected": 7,
+      "total": 7,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "allPassed": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "ratio": 1
+    }
+  },
+  {
+    "task": "07-job-retry",
+    "type": "bugfix",
+    "valid": true,
+    "template": {
+      "expected": 7,
+      "total": 7,
+      "passed": 0,
+      "failed": 7,
+      "skipped": 0,
+      "cancelled": 0,
+      "allPassed": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "ratio": 0
+    },
+    "reference": {
+      "expected": 7,
+      "total": 7,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "allPassed": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "ratio": 1
+    }
+  },
+  {
+    "task": "08-log-stats",
+    "type": "refactor",
+    "valid": true,
+    "template": {
+      "expected": 7,
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "cancelled": 0,
+      "allPassed": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "ratio": 0
+    },
+    "reference": {
+      "expected": 7,
+      "total": 7,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "allPassed": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "ratio": 1
+    }
+  }
+]

@@ -1,0 +1,413 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-27T20:19:35.317Z",
+  "runCount": 4,
+  "byConfig": {
+    "fusion-sol+glm": {
+      "runs": 1,
+      "uniqueTasks": 1,
+      "passed": 1,
+      "passRate": 1,
+      "meanPartialPassRatio": 1,
+      "totalCostUsd": null,
+      "meanCostUsd": null,
+      "costPerSolvedTaskUsd": null,
+      "knownCostUsd": 0.14569143826,
+      "meanKnownCostUsd": 0.14569143826,
+      "knownCostPerSolvedTaskUsd": 0.14569143826,
+      "incompleteCostRuns": 1,
+      "meanWallTimeSeconds": 300.108,
+      "errors": 1,
+      "lead": {
+        "input": 11189,
+        "cachedInput": 38016,
+        "cacheWrite": 0,
+        "output": 929,
+        "cacheHitRate": 0.7726044101209226
+      },
+      "sidekick": {
+        "input": 16062,
+        "cachedInput": 126272,
+        "cacheWrite": 0,
+        "output": 12741,
+        "cacheHitRate": 0.8871527533828881
+      },
+      "turns": {
+        "lead": 6,
+        "sidekick": 15
+      },
+      "toolCalls": {
+        "lead": 11,
+        "sidekick": 21
+      },
+      "leadWriteCalls": 0,
+      "leadWriteToolCalls": 0,
+      "sidekickCalls": 2,
+      "diff": {
+        "files": 4,
+        "insertions": 294,
+        "deletions": 4,
+        "bytes": 11917
+      }
+    },
+    "fusion-sol+swe2": {
+      "runs": 1,
+      "uniqueTasks": 1,
+      "passed": 1,
+      "passRate": 1,
+      "meanPartialPassRatio": 1,
+      "totalCostUsd": 0.0341208,
+      "meanCostUsd": 0.0341208,
+      "costPerSolvedTaskUsd": 0.0341208,
+      "knownCostUsd": 0.0341208,
+      "meanKnownCostUsd": 0.0341208,
+      "knownCostPerSolvedTaskUsd": 0.0341208,
+      "incompleteCostRuns": 0,
+      "meanWallTimeSeconds": 100.007,
+      "errors": 0,
+      "lead": {
+        "input": 10385,
+        "cachedInput": 39808,
+        "cacheWrite": 0,
+        "output": 937,
+        "cacheHitRate": 0.7930986392524854
+      },
+      "sidekick": {
+        "input": 10155,
+        "cachedInput": 70336,
+        "cacheWrite": 0,
+        "output": 3900,
+        "cacheHitRate": 0.8738368264774944
+      },
+      "turns": {
+        "lead": 6,
+        "sidekick": 14
+      },
+      "toolCalls": {
+        "lead": 7,
+        "sidekick": 19
+      },
+      "leadWriteCalls": 0,
+      "leadWriteToolCalls": 0,
+      "sidekickCalls": 2,
+      "diff": {
+        "files": 4,
+        "insertions": 131,
+        "deletions": 4,
+        "bytes": 6551
+      }
+    },
+    "glm-solo": {
+      "runs": 1,
+      "uniqueTasks": 1,
+      "passed": 1,
+      "passRate": 1,
+      "meanPartialPassRatio": 1,
+      "totalCostUsd": 0.08253715202,
+      "meanCostUsd": 0.08253715202,
+      "costPerSolvedTaskUsd": 0.08253715202,
+      "knownCostUsd": 0.08253715202,
+      "meanKnownCostUsd": 0.08253715202,
+      "knownCostPerSolvedTaskUsd": 0.08253715202,
+      "incompleteCostRuns": 0,
+      "meanWallTimeSeconds": 166.677,
+      "errors": 0,
+      "lead": {
+        "input": 12123,
+        "cachedInput": 92352,
+        "cacheWrite": 0,
+        "output": 9671,
+        "cacheHitRate": 0.8839626704953338
+      },
+      "sidekick": {
+        "input": 0,
+        "cachedInput": 0,
+        "cacheWrite": 0,
+        "output": 0,
+        "cacheHitRate": null
+      },
+      "turns": {
+        "lead": 13,
+        "sidekick": 0
+      },
+      "toolCalls": {
+        "lead": 17,
+        "sidekick": 0
+      },
+      "leadWriteCalls": 5,
+      "leadWriteToolCalls": 5,
+      "sidekickCalls": 0,
+      "diff": {
+        "files": 5,
+        "insertions": 265,
+        "deletions": 4,
+        "bytes": 11514
+      }
+    },
+    "sol-solo": {
+      "runs": 1,
+      "uniqueTasks": 1,
+      "passed": 1,
+      "passRate": 1,
+      "meanPartialPassRatio": 1,
+      "totalCostUsd": 0.047809199999999996,
+      "meanCostUsd": 0.047809199999999996,
+      "costPerSolvedTaskUsd": 0.047809199999999996,
+      "knownCostUsd": 0.047809199999999996,
+      "meanKnownCostUsd": 0.047809199999999996,
+      "knownCostPerSolvedTaskUsd": 0.047809199999999996,
+      "incompleteCostRuns": 0,
+      "meanWallTimeSeconds": 60.351,
+      "errors": 0,
+      "lead": {
+        "input": 8255,
+        "cachedInput": 52992,
+        "cacheWrite": 0,
+        "output": 2600,
+        "cacheHitRate": 0.8652178882230966
+      },
+      "sidekick": {
+        "input": 0,
+        "cachedInput": 0,
+        "cacheWrite": 0,
+        "output": 0,
+        "cacheHitRate": null
+      },
+      "turns": {
+        "lead": 8,
+        "sidekick": 0
+      },
+      "toolCalls": {
+        "lead": 13,
+        "sidekick": 0
+      },
+      "leadWriteCalls": 4,
+      "leadWriteToolCalls": 4,
+      "sidekickCalls": 0,
+      "diff": {
+        "files": 4,
+        "insertions": 111,
+        "deletions": 4,
+        "bytes": 6606
+      }
+    }
+  },
+  "byTaskType": {
+    "medium / fusion-sol+glm": {
+      "runs": 1,
+      "uniqueTasks": 1,
+      "passed": 1,
+      "passRate": 1,
+      "meanPartialPassRatio": 1,
+      "totalCostUsd": null,
+      "meanCostUsd": null,
+      "costPerSolvedTaskUsd": null,
+      "knownCostUsd": 0.14569143826,
+      "meanKnownCostUsd": 0.14569143826,
+      "knownCostPerSolvedTaskUsd": 0.14569143826,
+      "incompleteCostRuns": 1,
+      "meanWallTimeSeconds": 300.108,
+      "errors": 1,
+      "lead": {
+        "input": 11189,
+        "cachedInput": 38016,
+        "cacheWrite": 0,
+        "output": 929,
+        "cacheHitRate": 0.7726044101209226
+      },
+      "sidekick": {
+        "input": 16062,
+        "cachedInput": 126272,
+        "cacheWrite": 0,
+        "output": 12741,
+        "cacheHitRate": 0.8871527533828881
+      },
+      "turns": {
+        "lead": 6,
+        "sidekick": 15
+      },
+      "toolCalls": {
+        "lead": 11,
+        "sidekick": 21
+      },
+      "leadWriteCalls": 0,
+      "leadWriteToolCalls": 0,
+      "sidekickCalls": 2,
+      "diff": {
+        "files": 4,
+        "insertions": 294,
+        "deletions": 4,
+        "bytes": 11917
+      }
+    },
+    "medium / fusion-sol+swe2": {
+      "runs": 1,
+      "uniqueTasks": 1,
+      "passed": 1,
+      "passRate": 1,
+      "meanPartialPassRatio": 1,
+      "totalCostUsd": 0.0341208,
+      "meanCostUsd": 0.0341208,
+      "costPerSolvedTaskUsd": 0.0341208,
+      "knownCostUsd": 0.0341208,
+      "meanKnownCostUsd": 0.0341208,
+      "knownCostPerSolvedTaskUsd": 0.0341208,
+      "incompleteCostRuns": 0,
+      "meanWallTimeSeconds": 100.007,
+      "errors": 0,
+      "lead": {
+        "input": 10385,
+        "cachedInput": 39808,
+        "cacheWrite": 0,
+        "output": 937,
+        "cacheHitRate": 0.7930986392524854
+      },
+      "sidekick": {
+        "input": 10155,
+        "cachedInput": 70336,
+        "cacheWrite": 0,
+        "output": 3900,
+        "cacheHitRate": 0.8738368264774944
+      },
+      "turns": {
+        "lead": 6,
+        "sidekick": 14
+      },
+      "toolCalls": {
+        "lead": 7,
+        "sidekick": 19
+      },
+      "leadWriteCalls": 0,
+      "leadWriteToolCalls": 0,
+      "sidekickCalls": 2,
+      "diff": {
+        "files": 4,
+        "insertions": 131,
+        "deletions": 4,
+        "bytes": 6551
+      }
+    },
+    "medium / glm-solo": {
+      "runs": 1,
+      "uniqueTasks": 1,
+      "passed": 1,
+      "passRate": 1,
+      "meanPartialPassRatio": 1,
+      "totalCostUsd": 0.08253715202,
+      "meanCostUsd": 0.08253715202,
+      "costPerSolvedTaskUsd": 0.08253715202,
+      "knownCostUsd": 0.08253715202,
+      "meanKnownCostUsd": 0.08253715202,
+      "knownCostPerSolvedTaskUsd": 0.08253715202,
+      "incompleteCostRuns": 0,
+      "meanWallTimeSeconds": 166.677,
+      "errors": 0,
+      "lead": {
+        "input": 12123,
+        "cachedInput": 92352,
+        "cacheWrite": 0,
+        "output": 9671,
+        "cacheHitRate": 0.8839626704953338
+      },
+      "sidekick": {
+        "input": 0,
+        "cachedInput": 0,
+        "cacheWrite": 0,
+        "output": 0,
+        "cacheHitRate": null
+      },
+      "turns": {
+        "lead": 13,
+        "sidekick": 0
+      },
+      "toolCalls": {
+        "lead": 17,
+        "sidekick": 0
+      },
+      "leadWriteCalls": 5,
+      "leadWriteToolCalls": 5,
+      "sidekickCalls": 0,
+      "diff": {
+        "files": 5,
+        "insertions": 265,
+        "deletions": 4,
+        "bytes": 11514
+      }
+    },
+    "medium / sol-solo": {
+      "runs": 1,
+      "uniqueTasks": 1,
+      "passed": 1,
+      "passRate": 1,
+      "meanPartialPassRatio": 1,
+      "totalCostUsd": 0.047809199999999996,
+      "meanCostUsd": 0.047809199999999996,
+      "costPerSolvedTaskUsd": 0.047809199999999996,
+      "knownCostUsd": 0.047809199999999996,
+      "meanKnownCostUsd": 0.047809199999999996,
+      "knownCostPerSolvedTaskUsd": 0.047809199999999996,
+      "incompleteCostRuns": 0,
+      "meanWallTimeSeconds": 60.351,
+      "errors": 0,
+      "lead": {
+        "input": 8255,
+        "cachedInput": 52992,
+        "cacheWrite": 0,
+        "output": 2600,
+        "cacheHitRate": 0.8652178882230966
+      },
+      "sidekick": {
+        "input": 0,
+        "cachedInput": 0,
+        "cacheWrite": 0,
+        "output": 0,
+        "cacheHitRate": null
+      },
+      "turns": {
+        "lead": 8,
+        "sidekick": 0
+      },
+      "toolCalls": {
+        "lead": 13,
+        "sidekick": 0
+      },
+      "leadWriteCalls": 4,
+      "leadWriteToolCalls": 4,
+      "sidekickCalls": 0,
+      "diff": {
+        "files": 4,
+        "insertions": 111,
+        "deletions": 4,
+        "bytes": 6606
+      }
+    }
+  },
+  "comparisons": [
+    {
+      "config": "fusion-sol+glm",
+      "pairedRuns": 1,
+      "meanCostDifferenceUsd": null,
+      "costReduction": null,
+      "passRateDifference": 0,
+      "conclusion": "Fusion 已记录的估算成本下界不低于基线，本样本没有显示成本优势；最终总成本仍不完整。"
+    },
+    {
+      "config": "fusion-sol+swe2",
+      "pairedRuns": 1,
+      "meanCostDifferenceUsd": -0.013688399999999996,
+      "costReduction": 0.28631309455083953,
+      "passRateDifference": 0,
+      "conclusion": "本样本观测到成本降低且通过率未下降；不能据此推断总体优势。"
+    }
+  ],
+  "sampleWarning": "样本与任务覆盖有限，置信度不足。此报告描述固定小型任务的观测值，未做显著性检验；重复运行也不等于独立任务。不得外推生产任务表现。",
+  "methodology": {
+    "input": "Pi usage.input is uncached input; cached input and cache writes are separate.",
+    "cacheHitRate": "cachedInput / (input + cachedInput + cacheWrite); token-weighted, null if no input.",
+    "costPerSolvedTask": "All attempted-run costs, including failures, divided by passed task×repeat runs; null when none pass or any cost is unknown.",
+    "comparisons": "Paired on task ID and repeat number; cost difference is fusion minus sol-solo.",
+    "passRate": "All hidden tests pass, no skipped/cancelled tests, expected test count and successful grader exit. Agent status is reported separately.",
+    "time": "Wall time of the Pi process including model/tool work, excluding setup and grading.",
+    "leadWrites": "Successful write/edit calls plus bash calls with observed worktree content changes; excludes delegated sidekick mutations."
+  }
+}

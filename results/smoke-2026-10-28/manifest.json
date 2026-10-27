@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-27T20:06:14.323Z",
+  "nodeVersion": "v24.21.0",
+  "piVersion": "1.4.0",
+  "configs": [
+    {
+      "id": "sol-solo",
+      "lead": "magpie/codex/gpt-6.1-sol"
+    },
+    {
+      "id": "fusion-sol+swe2",
+      "lead": "magpie/codex/gpt-6.1-sol",
+      "sidekick": "magpie/devin/swe-2"
+    },
+    {
+      "id": "fusion-sol+glm",
+      "lead": "magpie/codex/gpt-6.1-sol",
+      "sidekick": "magpie/zcode/GLM-5.3"
+    },
+    {
+      "id": "glm-solo",
+      "lead": "magpie/zcode/GLM-5.3"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "03-issue-summary",
+      "type": "medium",
+      "description": "Filter, aggregate and render an issue summary across modules",
+      "testCount": 8
+    }
+  ],
+  "repeats": 1,
+  "timeoutMs": 300000,
+  "thinking": "medium",
+  "automaticRetry": false,
+  "compaction": false,
+  "cacheWarming": false,
+  "order": "repeat, then sorted task; config order rotates by (task index + repeat - 1)",
+  "cacheCaveat": "Fresh conversations do not guarantee a cold provider cache; cross-run cache effects and time/order effects are uncontrolled."
+}

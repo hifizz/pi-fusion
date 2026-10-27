@@ -1,0 +1,19 @@
+.orchestrator/
+node_modules/
+.cache/
+.work/
+*.tsbuildinfo
+
+# eval outputs: keep only the aggregated smoke report public
+results/*
+!results/smoke-2026-10-28/
+results/smoke-2026-10-28/*
+!results/smoke-2026-10-28/report.md
+!results/smoke-2026-10-28/summary.json
+!results/smoke-2026-10-28/runs.jsonl
+!results/smoke-2026-10-28/manifest.json
+!results/smoke-2026-10-28/pricing.json
+!results/smoke-2026-10-28/models.txt
+.DS_Store
+.env
+.env.*

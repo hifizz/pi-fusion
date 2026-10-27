@@ -1,0 +1,15 @@
+{
+  "runCount": 4,
+  "completed": 3,
+  "timeouts": 1,
+  "hiddenPassed": 4,
+  "referenceTasks": 8,
+  "referenceTests": 55,
+  "tokenAccountingReconciled": true,
+  "costAccountingReconciled": true,
+  "liveFusionReuseConfirmed": true,
+  "globalPiUnchanged": true,
+  "temporaryWorkspacesRemoved": true,
+  "knownCredentialMatches": 0,
+  "filesScanned": 134
+}

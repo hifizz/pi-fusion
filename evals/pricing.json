@@ -1,0 +1,33 @@
+{
+  "currency": "USD",
+  "unit": "per_million_tokens",
+  "models": {
+    "magpie/codex/gpt-6.1-sol": {
+      "input": 2,
+      "cachedInput": 0.1,
+      "cacheWrite": 2.5,
+      "output": 10,
+      "source": "Read-only snapshot of local Pi models.json, cost fields for this exact model",
+      "asOf": "2026-10-28",
+      "note": "Configured estimates, not a billing statement; gateway charges may differ."
+    },
+    "magpie/devin/swe-2": {
+      "input": 0,
+      "cachedInput": 0,
+      "cacheWrite": 0,
+      "output": 0,
+      "source": "Devin CLI models list --format json: swe-2-medium cost_tier=Free; local Pi magpie/devin/swe-2 also configures zero rates",
+      "asOf": "2026-10-28",
+      "note": "Explicit estimate assuming the gateway forwards the ordinary Free-tier SWE-2. This is not verified gateway billing. SWE-2 Lightning is a different variant with $1 input/$0.1 cached/$5 output per million; replace these rates if the gateway charges."
+    },
+    "magpie/zcode/GLM-5.3": {
+      "input": 1.19516,
+      "cachedInput": 0.29879,
+      "cacheWrite": 0,
+      "output": 4.18306,
+      "source": "Read-only snapshot of local Pi models.json, cost fields for this exact model",
+      "asOf": "2026-10-28",
+      "note": "Configured estimates, not a billing statement; gateway charges may differ."
+    }
+  }
+}
