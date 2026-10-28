@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { addUsage, cacheHitRate, emptyUsage } from "../src/usage.ts";
 import { localPath } from "./files.ts";
-import { object, parseJsonl, validatePricing } from "./metrics.ts";
+import { object, parseJsonl, ratesForModel, validatePricing } from "./metrics.ts";
 import type { Pricing, RunRecord } from "./types.ts";
 
 export function aggregate(rows: RunRecord[]) {
@@ -163,16 +163,16 @@ export function renderReport(rows: RunRecord[], summary = summarize(rows), prici
       "| --- | ---: | ---: | ---: | ---: | --- |");
     const models = [...new Set(rows.flatMap((row) => [row.models.lead, row.models.sidekick].filter(Boolean) as string[]))];
     for (const model of models) {
-      const rates = pricing.models[model];
+      const rates = ratesForModel(pricing, model);
       if (!rates) continue;
       lines.push(`| ${model} | ${rates.input ?? "未知"} | ${rates.cachedInput ?? "未知"} | ${rates.cacheWrite ?? "未知"} | ${rates.output ?? "未知"} | ${rates.asOf} |`);
     }
     lines.push("", "单价单位为 USD / 百万 token。");
     for (const model of models) {
-      const rates = pricing.models[model];
+      const rates = ratesForModel(pricing, model);
       if (rates) lines.push("", `- ${model}：${rates.source}。${rates.note ?? ""}`);
     }
-    if (models.includes("magpie/devin/swe-2")) lines.push("",
+    if (models.some((model) => model.split("/").at(-1) === "swe-2")) lines.push("",
       "**SWE-2 零价只在网关沿用普通 Free 档时成立，实际网关计费未验证。本文的成本比较以保存的价格表为条件；它不能证明真实账单会等额下降。**");
   }
   lines.push("", "缓存与顺序限制：每次使用新会话，但无法清空供应商缓存；跨运行缓存、执行顺序和服务负载可能影响成本与时间。");

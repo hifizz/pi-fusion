@@ -6,21 +6,21 @@
   "configs": [
     {
       "id": "sol-solo",
-      "lead": "magpie/codex/gpt-6.1-sol"
+      "lead": "gpt-6.1-sol"
     },
     {
       "id": "fusion-sol+swe2",
-      "lead": "magpie/codex/gpt-6.1-sol",
-      "sidekick": "magpie/devin/swe-2"
+      "lead": "gpt-6.1-sol",
+      "sidekick": "swe-2"
     },
     {
       "id": "fusion-sol+glm",
-      "lead": "magpie/codex/gpt-6.1-sol",
-      "sidekick": "magpie/zcode/GLM-5.3"
+      "lead": "gpt-6.1-sol",
+      "sidekick": "GLM-5.3"
     },
     {
       "id": "glm-solo",
-      "lead": "magpie/zcode/GLM-5.3"
+      "lead": "GLM-5.3"
     }
   ],
   "tasks": [

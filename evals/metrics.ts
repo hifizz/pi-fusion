@@ -182,12 +182,17 @@ export function costForUsage(usage: TokenUsage, rates?: Rates): {
   return { total: complete ? known : null, known };
 }
 
+/** Full IDs can override the shared estimates keyed by neutral model label. */
+export function ratesForModel(pricing: Pricing, model: string): Rates | undefined {
+  return pricing.models[model] ?? pricing.models[model.slice(model.lastIndexOf("/") + 1)];
+}
+
 export function estimateCost(config: EvalConfig, metrics: Metrics, pricing: Pricing): Cost {
   const leadMatches = metrics.observedLeadModels.every((model) => model === config.lead);
   const sidekickMatches = metrics.observedSidekickModels.every((model) => model === config.sidekick);
-  const lead = costForUsage(metrics.lead.usage, leadMatches ? pricing.models[config.lead] : undefined);
+  const lead = costForUsage(metrics.lead.usage, leadMatches ? ratesForModel(pricing, config.lead) : undefined);
   const sidekick = costForUsage(metrics.sidekick.usage,
-    config.sidekick && sidekickMatches ? pricing.models[config.sidekick] : undefined);
+    config.sidekick && sidekickMatches ? ratesForModel(pricing, config.sidekick) : undefined);
   const complete = metrics.usageComplete && lead.total !== null && sidekick.total !== null;
   return {
     leadUsd: lead.total, sidekickUsd: sidekick.total,

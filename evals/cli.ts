@@ -4,7 +4,7 @@ import { parseArgs } from "node:util";
 import { selectConfigs } from "./configs.ts";
 import { localPath, ROOT } from "./files.ts";
 import { createRedactor } from "./isolation.ts";
-import { validatePricing } from "./metrics.ts";
+import { ratesForModel, validatePricing } from "./metrics.ts";
 import { runEvaluation } from "./runner.ts";
 import { loadTasks } from "./tasks.ts";
 
@@ -18,6 +18,7 @@ try {
   });
   if (values.help) {
     console.log("pnpm eval --dry-run\npnpm eval --configs <a,b> --tasks 'evals/tasks/*' --repeats N --out results/<name> [--timeout-seconds 300]");
+    console.log("Set model IDs in evals/models.local.json (copy evals/models.example.json). Find IDs with pi --list-models.");
   } else {
     const repeats = Number(values.repeats);
     const timeoutMs = Number(values["timeout-seconds"]) * 1000;
@@ -33,7 +34,10 @@ try {
       for (const task of tasks) console.log(`  ${task.id} [${task.type}] ${task.testCount} hidden tests`);
       for (const config of configs) console.log(`  ${config.id}: ${config.lead}${config.sidekick ? ` + ${config.sidekick}` : ""}`);
       const unknown = configs.flatMap((config) => [config.lead, config.sidekick].filter(Boolean) as string[])
-        .filter((model) => !pricing.models[model] || Object.values(pricing.models[model]).includes(null));
+        .filter((model) => {
+          const rates = ratesForModel(pricing, model);
+          return !rates || Object.values(rates).includes(null);
+        });
       if (unknown.length) console.log(`  Pricing incomplete: ${[...new Set(unknown)].join(", ")} (reported as unknown, not free)`);
     } else {
       const out = localPath(values.out ?? `results/${new Date().toISOString().replace(/[:.]/g, "-")}`);

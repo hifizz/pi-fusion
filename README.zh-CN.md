@@ -2,139 +2,93 @@
 
 # pi-fusion
 
-参照 Devin Fusion 的 **lead/sidekick** 模式为 Pi 编码代理(`pi` 1.4.0，`@earendil-works/pi-coding-agent`)编写的本地扩展，外加一套可复现的本地评测框架，用于验证该模式在小型编码任务上到底有没有收益。
+pi-fusion 为 [Pi 编码代理](https://github.com/earendil-works/pi) 增加一个持久 sidekick。lead 模型负责计划和审查，单独配置的 sidekick 负责实现，并在多次请求间保留上下文。仓库还提供本地评测框架，用小型编码任务比较这种协作方式与单模型的表现。
 
-- **fusion-lite 扩展**：lead 用 `sidekick` 工具委派实现；sidekick 是一个**持久**子会话，跨多次 brief 保留自己的上下文，只交换 brief/结果/反馈，保留两边可复用的 prompt 前缀；实际缓存命中由供应商决定。
-- **评测框架**：每次 trial 在全新的沙箱临时目录中独立运行，结束后才拷入隐藏测试评分；按配置汇总通过率、token、估算成本、cost per solved。
+**状态：** 仅完成一次冒烟运行：1 个任务 × 4 个配置 × 1 次重复；四个配置均通过 8/8 项隐藏测试，但 `fusion-sol+glm` 达到 300 秒超时。这不能作为有收益的证据。详见[冒烟报告](results/smoke-2026-10-28/report.md)。
 
-## 状态
+## 安装
 
-仅完成一次冒烟运行：1 个任务（`03-issue-summary`）× 4 个配置 × 1 次重复。四个配置均通过全部 8 项隐藏测试，但 `fusion-sol+glm` 达到 300 秒超时。数字仅为初步观测，不能作为有收益的证据。详见[冒烟报告](results/smoke-2026-10-28/report.md)。
-
-## 环境要求
-
-- Node.js 24（`engines: >=24 <25`，已用 v24.21.0 验证）
-- pnpm 12.11.2（`packageManager` 锁定）
-- Pi 1.4.0（`@earendil-works/pi-ai` / `@earendil-works/pi-coding-agent` 均固定为 `1.4.0`）
-
-TypeScript 直接由 Node 原生 type stripping 运行（`erasableSyntaxOnly`），测试用 `node:test`，**不需要任何构建步骤**。
-
-## 安装与日常命令
-
-`pnpm-workspace.yaml` 已把 `storeDir`/`cacheDir` 两个路径固定到仓库内 `.cache/pnpm/`；其余写入位置随机器而定，因此本项目统一使用下面的严格本地环境（`--state-dir` 是 pnpm 支持的全局 CLI 覆盖）：
+**尚未发布到 npm。** 需要 Node.js 24、pnpm 12.11.2 和 Pi 1.4.0，无需构建。
 
 ```bash
-mkdir -p .cache/tmp
-export TMPDIR="$PWD/.cache/tmp"
-export XDG_CACHE_HOME="$PWD/.cache"
-export COREPACK_HOME="$PWD/.cache/corepack"
-export PNPM_HOME="$PWD/.cache/pnpm-home"
-export npm_config_cache="$PWD/.cache/npm"
-pnpm --state-dir="$PWD/.cache/pnpm/state" install
-pnpm typecheck
-pnpm test
+git clone https://github.com/hifizz/pi-fusion.git
+cd pi-fusion
+pnpm install
+pi -e "$PWD/src/index.ts" --model '<provider>/<model>' \
+  --fusion-sidekick-model '<provider>/<model>'
 ```
 
-`ignoreScripts` 已开启，安装期不执行依赖脚本。不需要也不应改动 `~/.pi/agent` 或任何全局状态。
+将占位符替换为 lead 和 sidekick 的模型 ID（见“使用”）。`-e` 只为本次 Pi 启动加载扩展。
 
-## 在 Pi 中启用扩展
-
-一次性加载（推荐用法）：
+如果想在某个使用此扩展的项目中持续启用，请在该项目里选择以下**一种**方式：
 
 ```bash
-pi -e /absolute/path/pi-fusion/src/index.ts --model magpie/codex/gpt-6.1-sol
+# 使用已执行 pnpm install 的本地克隆
+pi install --local /absolute/path/pi-fusion
+# 或由 Pi 从 GitHub 安装（两种来源格式均支持）
+pi install --local git:github.com/hifizz/pi-fusion
+pi install --local https://github.com/hifizz/pi-fusion
 ```
 
-sidekick 模型解析顺序（在**第一次**调用 sidekick 工具时解析一次）：
+`--local` 将包记录到该项目的 `.pi/settings.json`；Pi 提示时需授予项目信任。本地路径直接引用你的克隆。以上来源格式均已对照 Pi 1.4.0 安装包中的文档、类型声明和 `pi install --help` 确认。
 
-```
---fusion-sidekick-model <provider/model>  >  FUSION_SIDEKICK_MODEL  >  magpie/devin/swe-2（默认）
-```
+**npm 发布后（未来）：** `pi install npm:pi-fusion`。加上 `--local` 可安装到当前项目。这是 Pi 支持的包安装语法，当前还没有可用的 npm 发布版本。
 
-例如：`--fusion-sidekick-model magpie/zcode/GLM-5.3`。
+## 使用
 
-本仓库 `package.json` 带 `pi.extensions` 元数据，因此在**消费方项目**中也可以用 `pi install --local /absolute/path/pi-fusion` 安装。这是可选项——本项目没有执行过该命令——它只修改那个消费项目自己的 Pi 包设置。**不要**全局安装扩展，也不要编辑 `~/.pi`。
-
-直接调用 `pi` 时，主会话的存储行为遵循 Pi 自身实现；fusion-lite 的 sidekick 工作会话完全在内存中。评测不使用主会话状态，而是在隔离的本地副本中运行。
-
-## 持久上下文是怎么工作的
-
-- 每个活跃的 lead 运行时里，sidekick 懒加载创建**一个** SDK 子会话；同一子会话跨多次 brief 复用（FIFO 串行），只存在于内存中；主会话 shutdown/reload 后随之重置。
-- 不向 sidekick 拷贝 lead 的整段对话，没有裁判模型，不按轮切换模型。
-- 工具入参 `{brief: string}`；返回结构化报告（summary/changedFiles/tests/remainingIssues）+ 真实 `git diff --stat`（含 untracked 文件名）+ 当次与累计 token 用量。
-- sidekick 最终输出不是合法 JSON 时，报告标记为 `reportFormat: "text"` 并在 `remainingIssues` 中写明“未验证”，**不会编造测试结果**。
-- 中止/丢弃语义全部用 mock 单测覆盖，测试不包含任何真实（付费）模型调用。
-
-## 评测
+lead 使用 Pi 原有的 `--model '<provider>/<model>'`。sidekick 用 `--fusion-sidekick-model '<provider>/<model>'` 或 `FUSION_SIDEKICK_MODEL` 指定，命令行参数优先。**没有默认 sidekick 模型**：两者都未设置时，首次调用 sidekick 会报出配置提示。选定的模型在该 Pi 运行时内保持不变。
 
 ```bash
-pnpm eval --dry-run                 # 只校验任务与配置，不调模型
-pnpm eval:validate-tasks            # 自证：隐藏测试在参考答案上通过、在原始模板上失败
+pi --list-models
+FUSION_SIDEKICK_MODEL='<provider>/<model>' \
+  pi -e /absolute/path/pi-fusion/src/index.ts --model '<provider>/<model>'
+```
 
-# 已交付冒烟产物（离线重新生成报告，不调模型）：results/smoke-2026-10-28/
-pnpm report results/smoke-2026-10-28
+从 `pi --list-models` 中选取 ID，并在 Pi 中配置相应凭据。随后给 Pi 一个编码任务，lead 就可以通过 `sidekick` 工具委派实现。
 
-# 新跑一份（需用户授权；输出目录必须不存在，runner 对已存在目录直接拒绝）
+## 运行评测
+
+真实评测需要 macOS（`sandbox-exec`），可能产生模型费用。先运行 dry-run，它不会调用模型。
+
+将 `evals/models.example.json` 复制为 `evals/models.local.json`，把值改成 `pi --list-models` 中的 ID。本地文件已被 gitignore 忽略，只控制评测模型，不配置交互式扩展。缺少值或仍含 `<provider>` 占位符时会明确报错。
+
+| 配置 | lead 模型键 | sidekick 模型键 |
+| --- | --- | --- |
+| `sol-solo` | `gpt-6.1-sol` | — |
+| `fusion-sol+swe2` | `gpt-6.1-sol` | `swe-2` |
+| `fusion-sol+glm` | `gpt-6.1-sol` | `GLM-5.3` |
+| `glm-solo` | `GLM-5.3` | — |
+
+```bash
+pnpm eval --dry-run
 pnpm eval --configs 'sol-solo,fusion-sol+swe2,fusion-sol+glm,glm-solo' \
   --tasks 'evals/tasks/03-issue-summary' --repeats 1 --out results/my-smoke
 pnpm report results/my-smoke
 ```
 
-在这次冒烟中，两种 fusion 配置各调用 sidekick 两次，并复用同一个持久 worker 会话。`fusion-sol+glm` 的已知成本下界高于 `sol-solo` 的完整成本，本样本未显示该配置有成本优势；SWE-2 成本估算采用 Free-tier 假设。评测 CLI 因超时 trial 以 1 退出，JSONL 记录完整，未重试。
+用逗号分隔配置 ID，通过任务路径或 glob 选择任务，用 `--repeats N` 设置重复次数。输出目录必须是新的。失败或超时的 trial 仍保存结果；即使评测以非零退出，也应运行 `pnpm report`。比较成本前，请按自己的模型和供应商核对 `evals/pricing.json` 中的估算；SWE-2 的零价是未经实际账单验证的 Free-tier 假设。
 
-完整基准示例（**开发期间未运行**，仅示意）：
+## 交给你的 AI 代理试用
 
-```bash
-pnpm eval --configs 'sol-solo,fusion-sol+swe2,fusion-sol+glm,glm-solo' \
-  --tasks 'evals/tasks/*' --repeats 3 --out results/full-example
+把下面的提示词复制给编码代理：
+
+```text
+请在我选择的工作目录中帮我试用 pi-fusion。
+1. 克隆 https://github.com/hifizz/pi-fusion.git（或使用已有克隆），
+   阅读 README.zh-CN.md 和 docs/NOTES.md，然后运行 pnpm install。
+2. 用 pi --list-models 查找模型 ID；如果我尚未指定模型，先问我。
+   仅在 evals/models.local.json 不存在时从 evals/models.example.json 创建，
+   填入模型 ID，不要覆盖已有的本地配置。
+3. 运行 pnpm eval --dry-run。如果尚未获得付费模型调用授权，
+   在这里停下，先询问我是否运行真实冒烟评测。
+4. 获得授权后，只对一个任务运行四个配置，每个一次，不重试：
+   pnpm eval --configs 'sol-solo,fusion-sol+swe2,fusion-sol+glm,glm-solo' --tasks 'evals/tasks/03-issue-summary' --repeats 1 --out results/my-smoke
+   如果输出目录已存在，请选择另一个全新目录。
+5. 即使评测以非零退出，也对同一输出目录运行 pnpm report。
+   总结隐藏测试通过情况、超时或错误、耗时和估算成本，
+   说明用量是否完整、价格假设，以及样本量的局限。
+按 docs/NOTES.md 中的沙箱环境设置，将所有写入限制在克隆目录内。
+不要修改全局 Pi 设置、打印凭据、push 或发布。
 ```
 
-注意：
-
-- 开发期预算就是上面那**一次**冒烟（已用掉）；任何新的真实运行都必须先获得用户授权并使用全新输出目录。
-- 输出目录已存在时 runner 拒绝运行；`--timeout-seconds` 默认 300。
-- 失败的 trial 仍会写入 JSONL 记录；有失败/未通过时 CLI 以非零退出，`report` 仍照常生成。
-
-### 任务集
-
-8 个任务，均为纯 `node:test` 夹具、无第三方依赖、单次运行 < 1 分钟：
-
-| 类型 | 任务 |
-| --- | --- |
-| 短小改动 ×2 | `01-clamp`、`02-slug` |
-| 中等多文件 ×3 | `03-issue-summary`、`04-cart`、`05-event-bus` |
-| bug 修复 ×2（含串行异步 debug） | `06-ttl-cache`、`07-job-retry` |
-| 重构 ×1 | `08-log-stats` |
-
-新增一个任务：`evals/tasks/<id>/` 下放
-
-- `task.json`：`{"id":"09-example","type":"medium","description":"Example task","testCount":5}`（仅示意）
-- `task.md`：给代理的需求
-- `template/`：初始仓库模板（每次 trial 只拷它）
-- `reference/`：参考实现（与模板 overlay）
-- `hidden/*.test.mjs`：隐藏测试，用 `../src` 相对导入；`testCount` 必须与顶层测试数一致
-
-### 新增配置 / 价格
-
-- 配置写在 `evals/configs.ts`；付费运行前先用 `pi --list-models` 核实模型名。
-- 价格写在 `evals/pricing.json`，每项含 `input`/`cachedInput`/`cacheWrite`/`output`/`source`/`asOf`，可手工修改。
-- Kimi（如 `magpie/kimi/k3`）核实 ID 后可加为显式配置；目前**没有**被评测过，不要声称它参与过基准。
-
-## 目录结构
-
-```
-src/index.ts      # 扩展入口：flag、sidekick 工具、引导注入、usage 条目
-src/sidekick.ts   # PersistentSidekick + SDK 子会话工厂 + git 快照
-src/prompts.ts    # lead/sidekick 行为准则与工具描述（稳定 prompt）
-src/usage.ts      # token 归一化与累计
-evals/            # 评测 CLI、runner、配置、价格表、报告
-evals/tasks/      # 任务夹具（template/reference/hidden）
-tests/            # 扩展单测 + 评测指标/文件系统隔离/extension loader 检查（全程无模型调用）
-docs/NOTES.md     # Pi API 依据、隔离机制、指标语义、价格假设、已知限制
-```
-
-## 安全边界
-
-- 所有写入只在本仓库内；不改 `~/.pi/agent`、不 push、不发布、不 sudo。
-- 不打印任何密钥；sidekick 凭据只从已选 `agentDir` **读入内存**，worker 侧 OAuth 刷新不会写回全局 auth。
-- 真实评测与任务校验都要求 macOS `sandbox-exec`（无绕过回退），详见 docs/NOTES.md。
+开发时运行 `pnpm typecheck && pnpm test`。严格的本地写入环境、任务夹具、隔离机制、定价和实现细节见[开发说明](docs/NOTES.md)。

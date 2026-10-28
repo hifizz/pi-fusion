@@ -8,7 +8,7 @@ import { addUsage, cacheHitRate, emptyUsage, usageFromPi } from "../src/usage.ts
 import { selectConfigs } from "../evals/configs.ts";
 import { copyTree, localPath, makeWorkspace, ROOT } from "../evals/files.ts";
 import { createRedactor, localEnvironment, sandboxCommand, safeEventLog } from "../evals/isolation.ts";
-import { collectMetrics, costForUsage, estimateCost, parseJsonl, parsePiEvents, validatePricing } from "../evals/metrics.ts";
+import { collectMetrics, costForUsage, estimateCost, parseJsonl, parsePiEvents, ratesForModel, validatePricing } from "../evals/metrics.ts";
 import { runProcess } from "../evals/process.ts";
 import { aggregate, loadRunRecords, renderReport, summarize, writeReport } from "../evals/report.ts";
 import { diffSize } from "../evals/runner.ts";
@@ -76,6 +76,40 @@ test("usage, cache rate and price preserve independent cache/read/write buckets"
   assert.throws(() => validatePricing({
     ...pricing, models: { bad: { ...pricing.models["test/lead"], input: -1 } },
   }), /Invalid price/);
+});
+
+test("neutral prices support provider IDs, exact overrides, and unknown models", () => {
+  const neutral: Pricing = {
+    ...pricing,
+    models: {
+      "gpt-6.1-sol": pricing.models["test/lead"],
+      "swe-2": { ...pricing.models["test/worker"], input: 0, cachedInput: 0, cacheWrite: 0, output: 0 },
+    },
+  };
+  assert.equal(ratesForModel(neutral, "example/team/gpt-6.1-sol"), neutral.models["gpt-6.1-sol"]);
+  assert.equal(ratesForModel(neutral, "gpt-6.1-sol"), neutral.models["gpt-6.1-sol"]);
+  assert.equal(ratesForModel(neutral, "example/other"), undefined);
+  const config = { id: "sol-solo", lead: "example/team/gpt-6.1-sol" };
+  const metrics = collectMetrics([
+    { ...assistant, message: { ...assistant.message, provider: "example", model: "team/gpt-6.1-sol" } },
+    { type: "agent_settled" },
+  ]);
+  assert.ok(Math.abs(estimateCost(config, metrics, neutral).totalUsd! - 0.000410) < 1e-12);
+  const overrides = { ...neutral, models: { ...neutral.models, [config.lead]: pricing.models["test/worker"] } };
+  assert.equal(ratesForModel(overrides, config.lead), pricing.models["test/worker"]);
+  assert.equal(estimateCost(config, metrics, overrides).totalUsd,
+    costForUsage(metrics.lead.usage, pricing.models["test/worker"]).total);
+  assert.equal(estimateCost({ ...config, lead: "example/other" }, {
+    ...metrics, observedLeadModels: ["example/other"],
+  }, neutral).totalUsd, null);
+  for (const worker of ["swe-2", "example/team/swe-2"]) {
+    const record = row("fusion-sol+swe2", 1, true, 1);
+    record.models = { lead: config.lead, sidekick: worker };
+    const report = renderReport([record], undefined, neutral);
+    assert.ok(report.includes(`| ${config.lead} | 2 | 0.1 | 2.5 | 10 |`));
+    assert.ok(report.includes(`| ${worker} | 0 | 0 | 0 | 0 |`));
+    assert.match(report, /SWE-2 零价.*实际网关计费未验证/);
+  }
 });
 
 test("only authoritative assistant messages and last per-call sidekick snapshots count", () => {
@@ -171,15 +205,39 @@ test("JSONL records round-trip to report.md and summary.json", (t) => {
   assert.match(readFileSync(join(workspace, "report.md"), "utf8"), /客观结论/);
 });
 
-test("eight tasks cover the requested mix and configurations are explicit", () => {
+test("eight tasks cover the requested mix and configurations resolve explicit local models", (t) => {
   const tasks = loadTasks();
   assert.equal(tasks.length, 8);
   assert.deepEqual(Object.fromEntries(["short", "medium", "bugfix", "refactor"]
     .map((type) => [type, tasks.filter((task) => task.type === type).length])),
   { short: 2, medium: 3, bugfix: 2, refactor: 1 });
-  assert.equal(selectConfigs().length, 4);
-  assert.throws(() => selectConfigs("sol-solo,sol-solo"), /duplicates/);
-  assert.throws(() => selectConfigs("unknown"), /Unknown/);
+  const workspace = makeWorkspace("models-test-");
+  t.after(() => rmSync(workspace, { recursive: true, force: true }));
+  const modelsPath = join(workspace, "models.json");
+  assert.throws(() => selectConfigs(undefined, modelsPath), /Copy evals\/models\.example\.json/);
+  writeFileSync(modelsPath, JSON.stringify({
+    "gpt-6.1-sol": "example/team/lead", "swe-2": "example/worker", "GLM-5.3": "other/glm",
+  }));
+  assert.deepEqual(selectConfigs(undefined, modelsPath), [
+    { id: "sol-solo", lead: "example/team/lead" },
+    { id: "fusion-sol+swe2", lead: "example/team/lead", sidekick: "example/worker" },
+    { id: "fusion-sol+glm", lead: "example/team/lead", sidekick: "other/glm" },
+    { id: "glm-solo", lead: "other/glm" },
+  ]);
+  assert.throws(() => selectConfigs("sol-solo,sol-solo", modelsPath), /duplicates/);
+  assert.throws(() => selectConfigs("unknown", modelsPath), /Unknown/);
+  writeFileSync(modelsPath, JSON.stringify({ "gpt-6.1-sol": "example/team/lead" }));
+  assert.deepEqual(selectConfigs("sol-solo", modelsPath), [{ id: "sol-solo", lead: "example/team/lead" }]);
+  assert.throws(() => selectConfigs("fusion-sol+swe2", modelsPath), /swe-2.*provider\/model/);
+  for (const invalid of ["", "no-provider", "<provider>/model", "example/<model>", "example/model name", 42]) {
+    writeFileSync(modelsPath, JSON.stringify({ "gpt-6.1-sol": invalid }));
+    assert.throws(() => selectConfigs("sol-solo", modelsPath), /provider\/model ID without placeholders/);
+  }
+  for (const invalid of ["{", "[]", "null"]) {
+    writeFileSync(modelsPath, invalid);
+    assert.throws(() => selectConfigs(undefined, modelsPath), /Copy evals\/models\.example\.json/);
+  }
+  assert.throws(() => selectConfigs(undefined, join(ROOT, "evals/models.example.json")), /swe-2.*placeholders/);
   assert.throws(() => loadTasks("evals/tasks/missing*"), /no tasks/);
 });
 

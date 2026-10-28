@@ -19,7 +19,7 @@ Devin Fusion 的机制（来源：https://cognition.com/blog/devin-fusion 、htt
   - 入参：brief（目标、约束、完成标准、相关文件）；返回：sidekick 的结构化汇报（改了哪些文件、测试结果、遗留问题）+ `git diff --stat`。
   - 记录 lead 与 sidekick 各自的 token 用量（input / cached input / output）。
 - 一份 lead 行为准则（可作为扩展注入的 system 追加或 AGENTS.md 片段）：早委派、写规格级 brief、只看 diff 做 review、出问题再发 brief。
-- sidekick 模型通过配置/环境变量指定，默认 `magpie/devin/swe-2`。
+- sidekick 模型通过 `--fusion-sidekick-model` 或 `FUSION_SIDEKICK_MODEL` 显式指定，没有默认模型。
 
 ### B. 评测框架（重点）
 - 命令：`pnpm eval --configs <a,b,...> --tasks <glob> --repeats N --out results/<timestamp>`，以及 `pnpm eval --dry-run`（不调模型，只校验任务和配置）。
@@ -31,12 +31,12 @@ Devin Fusion 的机制（来源：https://cognition.com/blog/devin-fusion 、htt
   任务尽量用 TypeScript，测试用 vitest 或 node:test，单次跑完 < 1 分钟。
 - 每次运行在一个全新的临时目录（拷贝模板 + `git init`），通过 `pi -p --mode json` 非交互调用，带超时，`</dev/null`，结束后跑隐藏测试。
 - 配置（模型名用 `pi --list-models` 核实，以下为预期）：
-  1. `sol-solo`：lead 单独干，`magpie/codex/gpt-6.1-sol`
-  2. `fusion-sol+swe2`：lead `magpie/codex/gpt-6.1-sol` + sidekick `magpie/devin/swe-2`（开扩展）
-  3. `fusion-sol+glm`：lead `magpie/codex/gpt-6.1-sol` + sidekick `magpie/zcode/GLM-5.3`
-  4. `glm-solo`：`magpie/zcode/GLM-5.3` 单独干（便宜基线）
+  1. `sol-solo`：lead 单独干，`gpt-6.1-sol`
+  2. `fusion-sol+swe2`：lead `gpt-6.1-sol` + sidekick `swe-2`（开扩展）
+  3. `fusion-sol+glm`：lead `gpt-6.1-sol` + sidekick `GLM-5.3`
+  4. `glm-solo`：`GLM-5.3` 单独干（便宜基线）
   5. 可选 `swe2-solo`
-  配置写在 `evals/configs.ts`，方便以后加 Kimi（如 `magpie/kimi/k3`）。
+  配置组合写在 `evals/configs.ts`，实际模型 ID 写入被 gitignore 忽略的 `evals/models.local.json`，便于以后增加其他模型。
 - 指标（每次运行一行 JSONL，汇总成表）：
   - 是否通过隐藏测试（通过率）、部分通过的测试比例
   - 墙钟时间、回合数、工具调用次数

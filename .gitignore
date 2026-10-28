@@ -17,3 +17,4 @@ results/smoke-2026-10-28/*
 .DS_Store
 .env
 .env.*
+evals/models.local.json

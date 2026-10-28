@@ -6,8 +6,6 @@ import { createSidekickSession, PersistentSidekick } from "./sidekick.ts";
 import type { SidekickReport, SidekickSession } from "./sidekick.ts";
 import { usageFromPi } from "./usage.ts";
 
-const DEFAULT_SIDEKICK_MODEL = "magpie/devin/swe-2";
-
 export interface FusionExtensionDeps {
   createSession?: (ctx: ExtensionContext, model: string) => Promise<SidekickSession>;
 }
@@ -16,7 +14,7 @@ export function createFusionExtension(pi: ExtensionAPI, deps: FusionExtensionDep
   const createSession = deps.createSession ?? createSidekickSession;
   pi.registerFlag("fusion-sidekick-model", {
     type: "string",
-    description: "Sidekick provider/model; defaults to FUSION_SIDEKICK_MODEL or magpie/devin/swe-2",
+    description: "Sidekick provider/model; required here or via FUSION_SIDEKICK_MODEL",
   });
 
   let sidekick: PersistentSidekick | undefined;
@@ -25,9 +23,11 @@ export function createFusionExtension(pi: ExtensionAPI, deps: FusionExtensionDep
     if (!sidekick) {
       const flag = pi.getFlag("fusion-sidekick-model");
       const model =
-        (typeof flag === "string" && flag.length > 0 ? flag : undefined) ??
-        (process.env.FUSION_SIDEKICK_MODEL || undefined) ??
-        DEFAULT_SIDEKICK_MODEL;
+        (typeof flag === "string" ? flag.trim() : "") ||
+        process.env.FUSION_SIDEKICK_MODEL?.trim();
+      if (!model) {
+        throw new Error("Set --fusion-sidekick-model <provider>/<model> or FUSION_SIDEKICK_MODEL before using sidekick.");
+      }
       const runtimeCtx = ctx;
       sidekick = new PersistentSidekick({
         cwd: ctx.cwd,

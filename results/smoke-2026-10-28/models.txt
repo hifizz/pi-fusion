@@ -1,4 +1,4 @@
-provider  model              context  max-out  thinking  images
-[REDACTED]    codex/gpt-6.1-sol  500K     128K     yes       yes   
-[REDACTED]    devin/swe-2        262K     128K     yes       yes   
-[REDACTED]    zcode/GLM-5.3      1M       128K     yes       yes   
+model        context  max-out  thinking  images
+gpt-6.1-sol  500K     128K     yes       yes
+swe-2        262K     128K     yes       yes
+GLM-5.3      1M       128K     yes       yes

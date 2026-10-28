@@ -88,17 +88,17 @@ lead 写文件调用包括成功的 write/edit 和实际改变工作树内容的
 
 | 模型 | input | cached input | cache write | output | 日期 |
 | --- | ---: | ---: | ---: | ---: | --- |
-| magpie/codex/gpt-6.1-sol | 2 | 0.1 | 2.5 | 10 | 2026-10-28 |
-| magpie/devin/swe-2 | 0 | 0 | 0 | 0 | 2026-10-28 |
-| magpie/zcode/GLM-5.3 | 1.19516 | 0.29879 | 0 | 4.18306 | 2026-10-28 |
+| gpt-6.1-sol | 2 | 0.1 | 2.5 | 10 | 2026-10-28 |
+| swe-2 | 0 | 0 | 0 | 0 | 2026-10-28 |
+| GLM-5.3 | 1.19516 | 0.29879 | 0 | 4.18306 | 2026-10-28 |
 
 单价单位为 USD / 百万 token。
 
-- magpie/codex/gpt-6.1-sol：Read-only snapshot of local Pi models.json, cost fields for this exact model。Configured estimates, not a billing statement; gateway charges may differ.
+- gpt-6.1-sol：Read-only snapshot of local Pi models.json, cost fields for this exact model。Configured estimates, not a billing statement; gateway charges may differ.
 
-- magpie/devin/swe-2：Devin CLI models list --format json: swe-2-medium cost_tier=Free; local Pi magpie/devin/swe-2 also configures zero rates。Explicit estimate assuming the gateway forwards the ordinary Free-tier SWE-2. This is not verified gateway billing. SWE-2 Lightning is a different variant with $1 input/$0.1 cached/$5 output per million; replace these rates if the gateway charges.
+- swe-2：Devin CLI models list --format json: swe-2-medium cost_tier=Free; local Pi swe-2 also configures zero rates。Explicit estimate assuming the gateway forwards the ordinary Free-tier SWE-2. This is not verified gateway billing. SWE-2 Lightning is a different variant with $1 input/$0.1 cached/$5 output per million; replace these rates if the gateway charges.
 
-- magpie/zcode/GLM-5.3：Read-only snapshot of local Pi models.json, cost fields for this exact model。Configured estimates, not a billing statement; gateway charges may differ.
+- GLM-5.3：Read-only snapshot of local Pi models.json, cost fields for this exact model。Configured estimates, not a billing statement; gateway charges may differ.
 
 **SWE-2 零价只在网关沿用普通 Free 档时成立，实际网关计费未验证。本文的成本比较以保存的价格表为条件；它不能证明真实账单会等额下降。**
 

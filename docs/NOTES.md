@@ -4,7 +4,7 @@
 
 ## 0. 已完成的验证
 
-- 27/27 离线单测/集成检查通过（`node --test`，含 SDK 构造与 Jiti 扩展加载的真实无推理校验）。
+- 初次交付时 27/27 离线单测/集成检查通过（`node --test`，含 SDK 构造与 Jiti 扩展加载的真实无推理校验）。
 - 8 个任务的「参考答案通过、模板失败」验证全部完成（交付快照为 `docs/TASK-VALIDATION.json`，期望计数 5,5,8,8,8,7,7,7）。
 - 真实冒烟已完成且仅有一次：`03-issue-summary` × 4 配置 × 1 repeat（`results/smoke-2026-10-28/`）。四配置隐藏测试均 8/8；两种 fusion 配置在运行 JSON 中可见各 2 次 sidekick 调用复用同一持久 worker 会话；`fusion-sol+glm` 在 300s 超时，其成本仅为下界（完整总量未知），CLI 因超时以 1 退出、记录完整、无重试。
 - 报告口径：JSON 中不完整 run 的完整成本保持 `null`；Markdown 以 `≥` 展示已知成本下界，且当下界已超过某个完整 solo 基线时允许给出「无成本优势」的结论。
@@ -15,18 +15,35 @@
 - Node.js `>=24 <25`（实测 v24.21.0），pnpm `12.11.2`，Pi 依赖固定 `@earendil-works/pi-ai@1.4.0` 与 `@earendil-works/pi-coding-agent@1.4.0`。
 - TypeScript 不构建：Node 24 原生 type stripping 直接跑 `.ts`（`allowImportingTsExtensions` + `erasableSyntaxOnly` 保证语法可擦除），测试用 `node:test`。
 - `pnpm install && pnpm typecheck && pnpm test` 即可复现；无全局 Pi 改动需求。
-- **pnpm 路径治理**（pnpm 12 实测）：
-  - `pnpm-workspace.yaml` 承载 `storeDir`/`cacheDir`/`enableGlobalVirtualStore`/`ignoreScripts`/`updateNotifier`；其中 `storeDir`/`cacheDir` 固定指向 `.cache/pnpm/`；pnpm ≥10 起这些 key 放在 `.npmrc` 里会被忽略（已用 `pnpm config list` 与 `pnpm store path` 验证）。
-  - `stateDir` 在 pnpm 12 是**机器级**配置：项目 `pnpm-workspace.yaml` 中会被明确拒绝（warning：ignored），`.npmrc` 中的 `state-dir=` 同样不生效，`npm_config_state_dir` 环境变量也不进入 `pnpm config list` 的解析结果；受支持的方式是全局 CLI 标志 `--state-dir=<dir>`。
-  - 本项目只能固定 store/cache 两个路径，其余写入位置随机器而定，因此本会话的安装一律使用 README 给出的本地 `TMPDIR`/`XDG_CACHE_HOME`/`COREPACK_HOME`/`PNPM_HOME`/`npm_config_cache` 环境变量与 `--state-dir` 标志；不能断言裸 `pnpm` 命令在任何机器上都不写仓库外。
-  - `updateNotifier=false` 下 `install`/`typecheck`/`test` 在本机实测不产生 state 文件（`~/.local/state/pnpm/pnpm-state.json` mtime 未变）。
+普通使用只需 `pnpm install`；仓库不再固定 pnpm 的 store/cache 路径。以下是仅允许仓库内写入时的可选设置，在仓库根目录执行：
+
+```bash
+mkdir -p .cache/tmp
+export TMPDIR="$PWD/.cache/tmp"
+export XDG_CACHE_HOME="$PWD/.cache"
+export XDG_CONFIG_HOME="$PWD/.cache/xdg-config"
+export XDG_DATA_HOME="$PWD/.cache/xdg-data"
+export XDG_STATE_HOME="$PWD/.cache/xdg-state"
+export COREPACK_HOME="$PWD/.cache/corepack"
+export PNPM_HOME="$PWD/.cache/pnpm-home"
+export npm_config_cache="$PWD/.cache/npm"
+pnpm --store-dir="$PWD/.cache/pnpm/store" \
+  --cache-dir="$PWD/.cache/pnpm/cache" \
+  --state-dir="$PWD/.cache/pnpm/state" install
+pnpm typecheck
+pnpm test
+```
+
+`stateDir` 是 pnpm 12 的机器级配置，应通过 `--state-dir` 传入，不能写进项目的 `pnpm-workspace.yaml`。`ignoreScripts` 保持启用。上述环境仅约束这些工具的常见写入位置；真正的评测隔离由下文的 `sandbox-exec` 强制执行。
+
+直接测试 Pi 安装或帮助命令时，还可把 `PI_CODING_AGENT_DIR`、`PI_CODING_AGENT_SESSION_DIR` 指向仓库内临时目录，并设置 `PI_OFFLINE=1`、`PI_TELEMETRY=0`。空的隔离目录没有用户模型配置；需要真实模型时应使用评测框架的凭据暂存流程。
 
 ## 2. Pi 扩展 API 依据
 
 实现前阅读（不要凭记忆写 API）：
 
-- 文档：`node_modules/@earendil-works/pi-coding-agent/docs/` 下 `extensions.md`、`sdk.md`、`json.md`、`environment-variables.md`、`cli.md`
-- 类型：`dist/core/sdk.d.ts`、`dist/core/model-runtime.d.ts`、`dist/core/model-registry.d.ts`、`dist/core/resource-loader.d.ts`、`dist/core/agent-session.d.ts`、`dist/core/extensions/types.d.ts`、`pi-ai/dist/types.d.ts`
+- 文档：`node_modules/@earendil-works/pi-coding-agent/docs/` 下 `extensions.md`、`sdk.md`、`json.md`、`environment-variables.md`、`cli.md`、`packages.md`
+- 类型：`dist/core/sdk.d.ts`、`dist/core/model-runtime.d.ts`、`dist/core/model-registry.d.ts`、`dist/core/resource-loader.d.ts`、`dist/core/agent-session.d.ts`、`dist/core/package-manager.d.ts`、`dist/core/extensions/types.d.ts`、`pi-ai/dist/types.d.ts`
 
 关键事实：
 
@@ -74,7 +91,7 @@
 ## 6. 价格来源与假设
 
 - `evals/pricing.json` 中每项的 `input`/`cachedInput`/`cacheWrite`/`output`/`source`/`asOf` 可手工改；sol 与 GLM 使用 2026-10-28 配置的 Pi 费率快照。`docs/PRICE-SOURCES.json` 是一份脱敏、冻结的来源样本，仅作 provenance 记录，不参与计费。
-- **SWE-2 目前全为 0 的费率是显式假设**：Devin catalog 中普通 `swe-2-medium` 等为 `cost_tier: "Free"`（无 USD 价目），`-lightning` 变体才标价 $1/$0.1/$5（不同变体、不同价）。该假设认为 magpie 转发的同一模型按普通 Free tier 计，**未验证网关实际计费**。所有成本对比都以可编辑估算为前提，报告必须对 free-tier 假设给出警示。
+- **SWE-2 目前全为 0 的费率是显式假设**：Devin catalog 中普通 `swe-2-medium` 等为 `cost_tier: "Free"`（无 USD 价目），`-lightning` 变体才标价 $1/$0.1/$5（不同变体、不同价）。该假设认为网关转发的同一模型按普通 Free tier 计，**未验证网关实际计费**。所有成本对比都以可编辑估算为前提，报告必须对 free-tier 假设给出警示。
 - provider 侧跨会话 prompt cache 不可重置/不可控；任务与 repeat 的执行顺序做轮换；冒烟是单一样本，不证明优劣。
 
 ## 7. 已知限制 / 未验证项
@@ -83,3 +100,29 @@
 - 运行时级 auth 覆盖、原生自定义 provider 等边角路径未做真机联调。
 - 真实 runner 仅支持 macOS（`sandbox-exec`）。
 - 成本是估算不是账单；任务为合成小型任务；并发写场景面向可信本地代码，无生产环境承诺。
+
+## 8. 安装方式与模型配置
+
+安装语法已核对 Pi 1.4.0 自带的 `docs/packages.md`、`docs/cli.md`、`dist/core/package-manager.d.ts` 和实现，以及 `pi --help` / `pi install --help`：
+
+- `pi -e /absolute/path/pi-fusion/src/index.ts`：仅当前进程加载；相对路径基于当前工作目录。
+- `pi install --local /absolute/path/pi-fusion`：在使用方项目的 `.pi/settings.json` 中引用本地克隆，不复制文件，也不会替本地克隆安装依赖；先在克隆中运行 `pnpm install`。
+- `pi install --local git:github.com/hifizz/pi-fusion` 或 `pi install --local https://github.com/hifizz/pi-fusion`：Git 来源，由 Pi 克隆并安装依赖。
+- 项目包需要授予信任；交互提示中确认，非交互时可显式使用 `--approve` 仅信任本次命令。省略 `--local` 则使用个人 Pi 设置。
+- npm 尚未发布；未来使用 `pi install npm:pi-fusion`，可加 `--local`。此处只核实语法，不表示已有发布版本。
+
+扩展在第一次 sidekick 调用时按 `--fusion-sidekick-model` > `FUSION_SIDEKICK_MODEL` 选择模型，没有隐式默认值；缺少配置会在创建模型会话前报错。模型选择在当前运行时固定，关闭或重载后重新选择。
+
+评测从 `evals/models.local.json` 读取模型键到 Pi 完整 ID 的映射；只要求所选配置需要的键。先复制 `evals/models.example.json` 再填写，保留完整的 `provider/model`（模型部分可以含 `/`）；占位符、空值和错误格式均会报错。这个本地文件被 gitignore 忽略，不应提交。`pnpm eval --dry-run` 只验证配置格式与任务结构，不验证凭据或远端可用性；真实运行会先用隔离的 `pi --list-models` 核验模型。
+
+价格优先按完整模型 ID 查找，找不到时按最后一个 `/` 后的中性模型标签查找。不同模型没有匹配价格时保持未知，不当作免费。切换供应商时必须核对估算费率；可在 `evals/pricing.json` 中用完整模型 ID 设置覆盖。已提交冒烟产物中的模型标签经过中性化处理，数值和时间戳保持原样。
+
+## 9. 任务与扩展评测
+
+任务集共八个：短小改动 `01-clamp`、`02-slug`；多文件功能 `03-issue-summary`、`04-cart`、`05-event-bus`；bug 修复 `06-ttl-cache`、`07-job-retry`；重构 `08-log-stats`。`pnpm eval:validate-tasks` 离线验证参考实现通过、初始模板失败；需要 macOS 沙箱，不调用模型。
+
+新增任务时，在 `evals/tasks/<id>/` 下提供 `task.json`（`id`、`type`、`description`、`testCount`）、给代理的 `task.md`、初始仓库 `template/`、覆盖模板的参考实现 `reference/`、以及 `hidden/*.test.mjs`。隐藏测试通过 `../src` 相对导入，`testCount` 必须与顶层测试数一致。
+
+配置组合定义在 `evals/configs.ts`，实际模型 ID 放在本地映射中。可在核实 ID 后增加其他模型的显式配置；尚未评测的模型不能被写成已参与基准。
+
+`--timeout-seconds` 默认 300；输出目录必须不存在。失败或超时仍保存 JSONL，CLI 以非零退出，之后仍可生成报告。新真实运行需有模型费用授权；历史冒烟没有授权后续付费调用。

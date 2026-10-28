@@ -1,0 +1,5 @@
+{
+  "gpt-6.1-sol": "openai-codex/gpt-6.1-sol",
+  "swe-2": "<provider>/swe-2",
+  "GLM-5.3": "<provider>/GLM-5.3"
+}

@@ -27,7 +27,7 @@ function makeUsage(input: number, cacheRead = 0, cacheWrite = 0, output = 0) {
 function assistantMessage(usage: ReturnType<typeof makeUsage>, stopReason = "stop") {
   return {
     role: "assistant",
-    provider: "magpie",
+    provider: "test",
     model: "devin/swe-2",
     api: "test-api",
     content: [{ type: "text", text: "…" }],
@@ -100,7 +100,7 @@ function makeSidekick(
   const factoryCalls: number[] = [];
   const sidekick = new PersistentSidekick({
     cwd: options.cwd ?? REPO_ROOT,
-    model: "magpie/devin/swe-2",
+    model: "test/devin/swe-2",
     createSession: () => {
       factoryCalls.push(Date.now());
       return options.factory ? options.factory() : Promise.resolve(session);
@@ -427,7 +427,7 @@ test("extension registers the sidekick tool, appends guidance once, and disposes
   await messageEnd({ type: "message_end", message: assistantMessage(makeUsage(5, 1, 0, 2)) }, ctx);
   const leadEntry = entries.find((entry) => entry.customType === "fusion.lead_usage");
   assert.ok(leadEntry);
-  assert.equal((leadEntry.data as { model: string }).model, "magpie/devin/swe-2");
+  assert.equal((leadEntry.data as { model: string }).model, "test/devin/swe-2");
   assert.deepEqual((leadEntry.data as { usage: unknown }).usage, {
     input: 5,
     cachedInput: 1,
@@ -439,4 +439,45 @@ test("extension registers the sidekick tool, appends guidance once, and disposes
   assert.ok(shutdown);
   await shutdown({ type: "session_shutdown", reason: "quit" }, ctx);
   assert.equal(session.disposeCount, 1);
+});
+
+test("sidekick requires configuration, accepts the environment, and prefers the flag", async (t) => {
+  const previous = process.env.FUSION_SIDEKICK_MODEL;
+  delete process.env.FUSION_SIDEKICK_MODEL;
+  t.after(() => {
+    if (previous === undefined) delete process.env.FUSION_SIDEKICK_MODEL;
+    else process.env.FUSION_SIDEKICK_MODEL = previous;
+  });
+  let flag: unknown;
+  const chosen: string[] = [];
+  const createTool = () => {
+    let tool: Record<string, unknown> | undefined;
+    createFusionExtension({
+      registerFlag() {},
+      getFlag: () => flag,
+      registerTool: (value: Record<string, unknown>) => { tool = value; },
+      on() {},
+      appendEntry() {},
+    } as never, {
+      createSession: async (_ctx, model) => {
+        chosen.push(model);
+        return new FakeSession();
+      },
+    });
+    assert.ok(tool);
+    return tool.execute as (
+      id: string, params: { brief: string }, signal: undefined, onUpdate: undefined, ctx: unknown,
+    ) => Promise<unknown>;
+  };
+  const ctx = { cwd: REPO_ROOT, modelRegistry: {} };
+  const fromEnv = createTool();
+  await assert.rejects(fromEnv("missing", { brief: "brief" }, undefined, undefined, ctx),
+    /Set --fusion-sidekick-model.*FUSION_SIDEKICK_MODEL/);
+  assert.deepEqual(chosen, [], "missing configuration must not create a model session");
+  process.env.FUSION_SIDEKICK_MODEL = "test/environment";
+  await fromEnv("env", { brief: "brief" }, undefined, undefined, ctx);
+  flag = "test/flag";
+  await fromEnv("reused", { brief: "brief" }, undefined, undefined, ctx);
+  await createTool()("flag", { brief: "brief" }, undefined, undefined, ctx);
+  assert.deepEqual(chosen, ["test/environment", "test/flag"], "one model per runtime; flag wins for a new runtime");
 });
