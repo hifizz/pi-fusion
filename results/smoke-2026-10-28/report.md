@@ -71,10 +71,12 @@ lead 写文件调用包括成功的 write/edit 和实际改变工作树内容的
 
 | 任务 | 配置 | 重复 | 状态 | 隐藏测试 | 成本 | 证据 |
 | --- | --- | ---: | --- | ---: | ---: | --- |
-| 03-issue-summary | sol-solo | 1 | completed | 8/8 | $0.047809 | [日志与 diff](03-issue-summary__sol-solo__1/) |
-| 03-issue-summary | fusion-sol+swe2 | 1 | completed | 8/8 | $0.034121 | [日志与 diff](03-issue-summary__fusion-sol+swe2__1/) |
-| 03-issue-summary | fusion-sol+glm | 1 | timeout | 8/8 | ≥$0.145691 | [日志与 diff](03-issue-summary__fusion-sol+glm__1/) |
-| 03-issue-summary | glm-solo | 1 | completed | 8/8 | $0.082537 | [日志与 diff](03-issue-summary__glm-solo__1/) |
+| 03-issue-summary | sol-solo | 1 | completed | 8/8 | $0.047809 | 日志与 diff（仅本地） |
+| 03-issue-summary | fusion-sol+swe2 | 1 | completed | 8/8 | $0.034121 | 日志与 diff（仅本地） |
+| 03-issue-summary | fusion-sol+glm | 1 | timeout | 8/8 | ≥$0.145691 | 日志与 diff（仅本地） |
+| 03-issue-summary | glm-solo | 1 | completed | 8/8 | $0.082537 | 日志与 diff（仅本地） |
+
+原始逐次运行日志与 diff 仅保存在本地，不公开发布。
 
 用量记录限制：
 

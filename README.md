@@ -1,21 +1,27 @@
+English | [简体中文](README.zh-CN.md)
+
 # pi-fusion
 
-参照 Devin Fusion 的 **lead/sidekick** 模式为 Pi 编码代理(`pi` 1.4.0，`@earendil-works/pi-coding-agent`)编写的本地扩展，外加一套可复现的本地评测框架，用于验证该模式在小型编码任务上到底有没有收益。
+A local extension for the Pi coding agent (`pi` 1.4.0, `@earendil-works/pi-coding-agent`), inspired by Devin Fusion's **lead/sidekick** pattern, with a reproducible local evaluation harness to test whether the pattern helps on small coding tasks.
 
-- **fusion-lite 扩展**：lead 用 `sidekick` 工具委派实现；sidekick 是一个**持久**子会话，跨多次 brief 保留自己的上下文，只交换 brief/结果/反馈，保留两边可复用的 prompt 前缀；实际缓存命中由供应商决定。
-- **评测框架**：每次 trial 在全新的沙箱临时目录中独立运行，结束后才拷入隐藏测试评分；按配置汇总通过率、token、估算成本、cost per solved。
+- **fusion-lite extension**: the lead delegates implementation through the `sidekick` tool. The sidekick is a **persistent** child session that retains context across briefs. Only briefs, results, and feedback are exchanged, preserving reusable prompt prefixes on both sides; actual cache hits depend on the provider.
+- **Evaluation harness**: each trial runs independently in a fresh sandbox directory. Hidden tests are copied in only after the agent finishes. Results summarize pass rates, tokens, estimated cost, and cost per solved task by configuration.
 
-## 环境要求
+## Status
 
-- Node.js 24（`engines: >=24 <25`，已用 v24.21.0 验证）
-- pnpm 12.11.2（`packageManager` 锁定）
-- Pi 1.4.0（`@earendil-works/pi-ai` / `@earendil-works/pi-coding-agent` 均固定为 `1.4.0`）
+Only one smoke run has been completed: 1 task (`03-issue-summary`) × 4 configs × 1 repeat. All four configurations passed all 8 hidden tests, though `fusion-sol+glm` reached the 300-second timeout. The numbers are preliminary and are not evidence of a benefit. See the [smoke report](results/smoke-2026-10-28/report.md).
 
-TypeScript 直接由 Node 原生 type stripping 运行（`erasableSyntaxOnly`），测试用 `node:test`，**不需要任何构建步骤**。
+## Requirements
 
-## 安装与日常命令
+- Node.js 24 (`engines: >=24 <25`, verified with v24.21.0)
+- pnpm 12.11.2 (pinned in `packageManager`)
+- Pi 1.4.0 (`@earendil-works/pi-ai` and `@earendil-works/pi-coding-agent` are both pinned to `1.4.0`)
 
-`pnpm-workspace.yaml` 已把 `storeDir`/`cacheDir` 两个路径固定到仓库内 `.cache/pnpm/`；其余写入位置随机器而定，因此本项目统一使用下面的严格本地环境（`--state-dir` 是 pnpm 支持的全局 CLI 覆盖）：
+TypeScript runs directly through Node's native type stripping (`erasableSyntaxOnly`). Tests use `node:test`; **no build step is required**.
+
+## Installation and everyday commands
+
+`pnpm-workspace.yaml` pins `storeDir` and `cacheDir` under the repository's `.cache/pnpm/`. Other write locations vary by machine, so use the following environment to keep them local (`--state-dir` is pnpm's global CLI override):
 
 ```bash
 mkdir -p .cache/tmp
@@ -29,106 +35,106 @@ pnpm typecheck
 pnpm test
 ```
 
-`ignoreScripts` 已开启，安装期不执行依赖脚本。不需要也不应改动 `~/.pi/agent` 或任何全局状态。
+`ignoreScripts` is enabled, so dependency scripts do not run during installation. Do not change `~/.pi/agent` or other global state.
 
-## 在 Pi 中启用扩展
+## Enable the extension in Pi
 
-一次性加载（推荐用法）：
+Load it for a single invocation (recommended):
 
 ```bash
 pi -e /absolute/path/pi-fusion/src/index.ts --model magpie/codex/gpt-6.1-sol
 ```
 
-sidekick 模型解析顺序（在**第一次**调用 sidekick 工具时解析一次）：
+The sidekick model is resolved once, on the **first** sidekick tool call, in this order:
 
+```text
+--fusion-sidekick-model <provider/model>  >  FUSION_SIDEKICK_MODEL  >  magpie/devin/swe-2 (default)
 ```
---fusion-sidekick-model <provider/model>  >  FUSION_SIDEKICK_MODEL  >  magpie/devin/swe-2（默认）
-```
 
-例如：`--fusion-sidekick-model magpie/zcode/GLM-5.3`。
+For example: `--fusion-sidekick-model magpie/zcode/GLM-5.3`.
 
-本仓库 `package.json` 带 `pi.extensions` 元数据，因此在**消费方项目**中也可以用 `pi install --local /absolute/path/pi-fusion` 安装。这是可选项——本项目没有执行过该命令——它只修改那个消费项目自己的 Pi 包设置。**不要**全局安装扩展，也不要编辑 `~/.pi`。
+The repository's `package.json` includes `pi.extensions` metadata, so you can also run `pi install --local /absolute/path/pi-fusion` in a **consumer project**. This optional command has not been run for this project; it changes only that consumer project's Pi package settings. **Do not** install the extension globally or edit `~/.pi`.
 
-直接调用 `pi` 时，主会话的存储行为遵循 Pi 自身实现；fusion-lite 的 sidekick 工作会话完全在内存中。评测不使用主会话状态，而是在隔离的本地副本中运行。
+When invoking `pi` directly, the main session follows Pi's own storage behavior; fusion-lite's sidekick session stays entirely in memory. Evaluations use isolated local copies rather than main-session state.
 
-## 持久上下文是怎么工作的
+## How persistent context works
 
-- 每个活跃的 lead 运行时里，sidekick 懒加载创建**一个** SDK 子会话；同一子会话跨多次 brief 复用（FIFO 串行），只存在于内存中；主会话 shutdown/reload 后随之重置。
-- 不向 sidekick 拷贝 lead 的整段对话，没有裁判模型，不按轮切换模型。
-- 工具入参 `{brief: string}`；返回结构化报告（summary/changedFiles/tests/remainingIssues）+ 真实 `git diff --stat`（含 untracked 文件名）+ 当次与累计 token 用量。
-- sidekick 最终输出不是合法 JSON 时，报告标记为 `reportFormat: "text"` 并在 `remainingIssues` 中写明“未验证”，**不会编造测试结果**。
-- 中止/丢弃语义全部用 mock 单测覆盖，测试不包含任何真实（付费）模型调用。
+- Each active lead runtime lazily creates **one** SDK child session. It is reused across briefs in FIFO order, lives only in memory, and resets when the main session shuts down or reloads.
+- The lead's full conversation is not copied to the sidekick. There is no judge model or model switching between turns.
+- The tool accepts `{brief: string}` and returns a structured report (`summary`/`changedFiles`/`tests`/`remainingIssues`), real `git diff --stat` output plus untracked filenames, and per-call and cumulative token usage.
+- If the sidekick's final output is not valid JSON, the report uses `reportFormat: "text"` and records that it is unverified in `remainingIssues`; **test results are never invented**.
+- Cancellation and disposal behavior are covered by mock unit tests. Tests make no real or paid model calls.
 
-## 评测
+## Evaluation
 
 ```bash
-pnpm eval --dry-run                 # 只校验任务与配置，不调模型
-pnpm eval:validate-tasks            # 自证：隐藏测试在参考答案上通过、在原始模板上失败
+pnpm eval --dry-run                 # Validate tasks and configs without model calls
+pnpm eval:validate-tasks            # Check hidden tests pass on references and fail on templates
 
-# 已交付冒烟产物（离线重新生成报告，不调模型）：results/smoke-2026-10-28/
+# Regenerate the existing smoke report offline, without model calls
 pnpm report results/smoke-2026-10-28
 
-# 新跑一份（需用户授权；输出目录必须不存在，runner 对已存在目录直接拒绝）
+# New run: requires user authorization and a fresh output directory
 pnpm eval --configs 'sol-solo,fusion-sol+swe2,fusion-sol+glm,glm-solo' \
   --tasks 'evals/tasks/03-issue-summary' --repeats 1 --out results/my-smoke
 pnpm report results/my-smoke
 ```
 
-**冒烟已完成**（1 个中等任务 `03-issue-summary` × 4 配置 × 1 repeat），结果与结论见 [`results/smoke-2026-10-28/report.md`](results/smoke-2026-10-28/report.md)。四个配置隐藏测试全部 8/8 通过，其中 `fusion-sol+glm` 在 300s 超时结束——注意超时不等于代码不正确。要点：两种 fusion 配置各发起 2 次 sidekick 调用且复用同一持久 worker 会话；`fusion-sol+glm` 的已知成本下界已高于 `sol-solo` 的完整成本，本样本没有体现成本优势；SWE-2 成本含 Free-tier 假设。运行 `eval` 的 CLI 因存在超时 trial 以 1 退出，JSONL 记录完整，未重试。开发期预算就是这**一次**冒烟，不要再自行重跑。
+In that smoke run, each fusion configuration made two sidekick calls and reused one persistent worker session. The known cost lower bound for `fusion-sol+glm` exceeded the complete `sol-solo` cost, so this sample showed no cost advantage for that configuration. SWE-2 cost estimates assume the Free tier. The evaluation CLI exited with code 1 because of the timed-out trial; all JSONL records were saved and no retry was made.
 
-完整基准示例（**开发期间未运行**，仅示意）：
+Full benchmark example (**not run during development**, for illustration only):
 
 ```bash
 pnpm eval --configs 'sol-solo,fusion-sol+swe2,fusion-sol+glm,glm-solo' \
   --tasks 'evals/tasks/*' --repeats 3 --out results/full-example
 ```
 
-注意：
+Notes:
 
-- 开发期预算就是上面那**一次**冒烟（已用掉）；任何新的真实运行都必须先获得用户授权并使用全新输出目录。
-- 输出目录已存在时 runner 拒绝运行；`--timeout-seconds` 默认 300。
-- 失败的 trial 仍会写入 JSONL 记录；有失败/未通过时 CLI 以非零退出，`report` 仍照常生成。
+- The development budget covered **one** smoke run and is exhausted. Any new real run requires user authorization and a fresh output directory.
+- The runner rejects existing output directories. `--timeout-seconds` defaults to 300.
+- Failed trials still produce JSONL records. The CLI exits with a nonzero status for errors or failed tests; reports can still be generated.
 
-### 任务集
+### Task set
 
-8 个任务，均为纯 `node:test` 夹具、无第三方依赖、单次运行 < 1 分钟：
+Eight tasks use dependency-free `node:test` fixtures, each running in under a minute:
 
-| 类型 | 任务 |
+| Type | Tasks |
 | --- | --- |
-| 短小改动 ×2 | `01-clamp`、`02-slug` |
-| 中等多文件 ×3 | `03-issue-summary`、`04-cart`、`05-event-bus` |
-| bug 修复 ×2（含串行异步 debug） | `06-ttl-cache`、`07-job-retry` |
-| 重构 ×1 | `08-log-stats` |
+| Small changes ×2 | `01-clamp`, `02-slug` |
+| Medium, multiple files ×3 | `03-issue-summary`, `04-cart`, `05-event-bus` |
+| Bug fixes ×2, including debugging sequential async behavior | `06-ttl-cache`, `07-job-retry` |
+| Refactoring ×1 | `08-log-stats` |
 
-新增一个任务：`evals/tasks/<id>/` 下放
+To add a task, create the following under `evals/tasks/<id>/`:
 
-- `task.json`：`{"id":"09-example","type":"medium","description":"Example task","testCount":5}`（仅示意）
-- `task.md`：给代理的需求
-- `template/`：初始仓库模板（每次 trial 只拷它）
-- `reference/`：参考实现（与模板 overlay）
-- `hidden/*.test.mjs`：隐藏测试，用 `../src` 相对导入；`testCount` 必须与顶层测试数一致
+- `task.json`: e.g. `{"id":"09-example","type":"medium","description":"Example task","testCount":5}`
+- `task.md`: the requirements given to the agent
+- `template/`: the initial repository template, copied for each trial
+- `reference/`: the reference implementation, overlaid on the template
+- `hidden/*.test.mjs`: hidden tests using relative `../src` imports; `testCount` must match the number of top-level tests
 
-### 新增配置 / 价格
+### Add configurations or pricing
 
-- 配置写在 `evals/configs.ts`；付费运行前先用 `pi --list-models` 核实模型名。
-- 价格写在 `evals/pricing.json`，每项含 `input`/`cachedInput`/`cacheWrite`/`output`/`source`/`asOf`，可手工修改。
-- Kimi（如 `magpie/kimi/k3`）核实 ID 后可加为显式配置；目前**没有**被评测过，不要声称它参与过基准。
+- Define configurations in `evals/configs.ts`. Verify model IDs with `pi --list-models` before paid runs.
+- Edit prices in `evals/pricing.json`. Each entry includes `input`, `cachedInput`, `cacheWrite`, `output`, `source`, and `asOf`.
+- Kimi (e.g. `magpie/kimi/k3`) can be added as an explicit configuration after verifying its ID. It has **not** been evaluated; do not claim it participated in the benchmark.
 
-## 目录结构
+## Repository layout
 
+```text
+src/index.ts     # Extension entry: flags, sidekick tool, guidance injection, usage entries
+src/sidekick.ts  # PersistentSidekick, SDK child-session factory, git snapshots
+src/prompts.ts   # Lead/sidekick guidance and tool descriptions (stable prompts)
+src/usage.ts     # Token normalization and accumulation
+evals/           # Evaluation CLI, runner, configs, pricing, reports
+evals/tasks/     # Task fixtures (template/reference/hidden)
+tests/           # Extension tests, metrics, filesystem isolation, extension loading; no model calls
+docs/NOTES.md    # Pi API references, isolation, metric semantics, pricing assumptions, limitations
 ```
-src/index.ts      # 扩展入口：flag、sidekick 工具、引导注入、usage 条目
-src/sidekick.ts   # PersistentSidekick + SDK 子会话工厂 + git 快照
-src/prompts.ts    # lead/sidekick 行为准则与工具描述（稳定 prompt）
-src/usage.ts      # token 归一化与累计
-evals/            # 评测 CLI、runner、配置、价格表、报告
-evals/tasks/      # 任务夹具（template/reference/hidden）
-tests/            # 扩展单测 + 评测指标/文件系统隔离/extension loader 检查（全程无模型调用）
-docs/NOTES.md     # Pi API 依据、隔离机制、指标语义、价格假设、已知限制
-```
 
-## 安全边界
+## Safety boundaries
 
-- 所有写入只在本仓库内；不改 `~/.pi/agent`、不 push、不发布、不 sudo。
-- 不打印任何密钥；sidekick 凭据只从已选 `agentDir` **读入内存**，worker 侧 OAuth 刷新不会写回全局 auth。
-- 真实评测与任务校验都要求 macOS `sandbox-exec`（无绕过回退），详见 docs/NOTES.md。
+- Keep all writes inside this repository. Do not modify `~/.pi/agent`, push, publish, or use `sudo`.
+- Never print credentials. The sidekick reads credentials from the selected `agentDir` into memory; worker OAuth refreshes do not write back to global auth storage.
+- Real evaluations and task validation require macOS `sandbox-exec`, with no bypass fallback. See `docs/NOTES.md`.
