@@ -126,3 +126,15 @@ pnpm test
 配置组合定义在 `evals/configs.ts`，实际模型 ID 放在本地映射中。可在核实 ID 后增加其他模型的显式配置；尚未评测的模型不能被写成已参与基准。
 
 `--timeout-seconds` 默认 300；输出目录必须不存在。失败或超时仍保存 JSONL，CLI 以非零退出，之后仍可生成报告。新真实运行需有模型费用授权；历史冒烟没有授权后续付费调用。
+
+## 10. 会话成本跟踪
+
+- 持久化：`fusion.lead_usage`（每条 lead 助手消息一条，含 `model`/`usage`/`cost`/`ratesConfigured`）与 `fusion.sidekick_usage`（sidekick 进度快照）以自定义条目写入会话文件，`session_start` 另写 `fusion.models` 记录选用的 lead/sidekick 模型。重载或 resume 后 `/fusion-cost` 从 `ctx.sessionManager.getEntries()` 聚合，因此覆盖当前会话的**全部分支**而不只是活跃分支。
+- sidekick 快照在一次调用内累计：聚合按 `callId`（新格式，UUID，避免 pre-session 失败与 resume 时 call 计数撞车）或 legacy 的 `sessionId+call` 去重，只取**最后一次**快照；`complete:false` 表示没有终态快照，计数为 incomplete。每次调用结束（含失败/abort）都会发出终态快照，`cost` 保留已消耗的五项原始字段。
+- 成本来源是 Pi 每条消息记录的 `usage.cost`（按模型已配置费率计算）。旧条目没有 `cost`/`ratesConfigured` 时显示 unknown（"cost not recorded"），**不**用今天的 models.json 重估历史会话。
+- 费率证据：记录的正成本即视为已定价；否则看运行期模型 `cost`（含 tiers）有无正费率；全零运行期费率只有在 models.json 的模型声明、注册的扩展 provider 声明、或顶层的 `modelOverrides` 中**显式**写了全零才算"已配置（免费）"。Pi 会把缺省费率补成零，所以原生目录的全零且无任何显式声明时保守记为 unknown。
+- cache 命中率沿用 `cachedInput / (input + cachedInput + cacheWrite)`；普通 assistant/toolResult 条目不参与聚合，避免与 fusion 条目重复计数。
+- `pnpm fusion:costs` 只读扫描（fs 直接读 JSONL，不实例化 SessionManager，避免迁移/写入）。缺省根目录为 `~/.pi/agent/sessions/`；`PI_CODING_AGENT_DIR` 可替换 agent 目录，`PI_CODING_AGENT_SESSION_DIR` 优先指定会话根目录。`--dir` 可指定任意自定义目录（含 `~` 展开）；使用 Pi 的 `sessionDir` 设置或 `--session-dir` 时，也可在此传入同一目录。显式 `--dir` 不存在时报错；缺省目录不存在则输出空汇总。
+- `--since YYYY-MM-DD` 按**会话创建时间**（header timestamp）UTC 含边界过滤，不是按消息日期；非法日期（如 2026-02-30）报错。
+- fork/clone 的复制历史保留相同的 entry `id+timestamp`：共享条目归属于扫描中**最早**的会话（即使它早于 --since 截止），副本行的继承条目计 0 但保留模型名展示，`duplicateEntries` 计数；clone 之后新产生的用量按自身正常计费。
+- 限制：`malformedLines` 记录跳过的坏行；`incompleteCalls` 记录没有终态快照的调用；`invalidEntries` 记录字段非法被忽略的用量条目——这些都会在输出中显式提示，总额仍可能只是下界。USD 是配置费率估算，不是账单。

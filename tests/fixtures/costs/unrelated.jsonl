@@ -1,0 +1,2 @@
+{"type":"session","version":3,"id":"unrelated-session","timestamp":"2026-10-27T10:00:00.000Z","cwd":"/example/project-c"}
+{"type":"message","id":"u201","parentId":null,"timestamp":"2026-10-27T10:00:01.000Z","message":{"role":"user","content":"fixture only: must not appear in cost output","timestamp":1793095201000}}

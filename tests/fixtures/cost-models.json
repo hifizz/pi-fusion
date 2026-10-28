@@ -1,0 +1,13 @@
+{
+  "providers": {
+    "example": {
+      "models": [
+        { "id": "unpriced" },
+        { "id": "free", "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 } }
+      ],
+      "modelOverrides": {
+        "overridden": { "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 } }
+      }
+    }
+  }
+}

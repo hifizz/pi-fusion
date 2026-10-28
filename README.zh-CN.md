@@ -48,6 +48,20 @@ FUSION_SIDEKICK_MODEL='<provider>/<model>' \
 
 从 `pi --list-models` 中选取 ID，并在 Pi 中配置相应凭据。随后给 Pi 一个编码任务，lead 就可以通过 `sidekick` 工具委派实现。
 
+## 查看花了多少
+
+在 Pi 内运行 `/fusion-cost` 可查看当前会话（含恢复/重载的会话）已记录的 lead 与 sidekick token 数和估算 USD 成本。页脚会随每轮更新，形如 `fusion: lead $0.01 · sidekick $0.00`。
+
+跨会话汇总在本仓库中运行：
+
+```bash
+pnpm fusion:costs
+pnpm fusion:costs --since 2026-10-01
+pnpm fusion:costs --dir /path/to/sessions --json
+```
+
+它以只读方式扫描 Pi 会话文件，输出逐会话表格和总计。USD 是按各模型已配置的 Pi 费率得出的估算而非账单；没有记录成本或费率的用量显示为 unknown，绝不当作免费。
+
 ## 运行评测
 
 真实评测需要 macOS（`sandbox-exec`），可能产生模型费用。先运行 dry-run，它不会调用模型。

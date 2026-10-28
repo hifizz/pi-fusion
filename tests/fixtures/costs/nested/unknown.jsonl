@@ -1,0 +1,4 @@
+{"type":"session","version":3,"id":"unknown-session","timestamp":"2026-10-28T10:00:00.000Z","cwd":"/example/project-b"}
+{"type":"message","id":"u101","parentId":null,"timestamp":"2026-10-28T10:00:01.000Z","message":{"role":"user","content":"fixture only: second session prompt","timestamp":1793181601000}}
+{"type":"custom","customType":"fusion.lead_usage","id":"ulead","parentId":"u101","timestamp":"2026-10-28T10:00:02.000Z","data":{"model":"example/unpriced","usage":{"input":20,"cachedInput":10,"cacheWrite":0,"output":5},"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0,"total":0},"ratesConfigured":false}}
+{"type":"custom","customType":"fusion.sidekick_usage","id":"uwk","parentId":"ulead","timestamp":"2026-10-28T10:00:03.000Z","data":{"sessionId":"legacy-worker","call":1,"model":"example/worker","usage":{"input":30,"cachedInput":5,"cacheWrite":0,"output":10},"turns":1,"toolCalls":0,"writeToolCalls":0}}

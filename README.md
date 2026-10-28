@@ -48,6 +48,20 @@ FUSION_SIDEKICK_MODEL='<provider>/<model>' \
 
 Pick IDs from `pi --list-models` and configure their credentials in Pi. Then give Pi a coding task; the lead can delegate through the `sidekick` tool.
 
+## Check what it cost
+
+Inside Pi, `/fusion-cost` shows recorded lead and sidekick tokens and an estimated USD cost for the current session, including restored and resumed sessions. A short footer like `fusion: lead $0.01 · sidekick $0.00` updates after each turn.
+
+Across sessions, run from this repo:
+
+```bash
+pnpm fusion:costs
+pnpm fusion:costs --since 2026-10-01
+pnpm fusion:costs --dir /path/to/sessions --json
+```
+
+It scans Pi session files read-only and prints a per-session table plus a grand total. USD figures are estimates from each model's configured Pi rates, not a bill; usage with no recorded cost or configured rates is shown as unknown, never as free.
+
 ## Run the evaluation
 
 Real evaluations require macOS (`sandbox-exec`) and can incur model charges. Start with the dry run, which makes no model calls.

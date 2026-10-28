@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { InMemoryCredentialStore, InMemoryModelsStore } from "@earendil-works/pi-ai";
 import type { Usage } from "@earendil-works/pi-ai";
@@ -13,19 +14,25 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import type { AgentSession, AgentSessionEvent, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { SIDEKICK_GUIDANCE } from "./prompts.ts";
+import { captureCost } from "./costs.ts";
 import { addUsage, emptyUsage, usageFromPi } from "./usage.ts";
 import type { TokenUsage } from "./usage.ts";
 
 export type SidekickSession = Pick<
   AgentSession,
   "sessionId" | "subscribe" | "prompt" | "getLastAssistantText" | "abort" | "dispose"
->;
+> &
+  Partial<Pick<AgentSession, "model" | "modelRuntime">>;
 
 export interface SidekickProgress {
   sessionId: string;
   call: number;
+  callId: string;
   model: string;
   usage: TokenUsage;
+  cost: Usage["cost"];
+  ratesConfigured: boolean;
+  complete: boolean;
   turns: number;
   toolCalls: number;
   writeToolCalls: number;
@@ -248,21 +255,26 @@ export class PersistentSidekick {
 
   private async runOnce(brief: string, signal?: AbortSignal): Promise<{ report: SidekickReport; usage: Usage }> {
     const call = ++this.callCounter;
+    const callUsage = emptyRawUsage();
     const progress: SidekickProgress = {
       sessionId: "",
       call,
+      callId: randomUUID(),
       model: this.model,
       usage: emptyUsage(),
+      cost: callUsage.cost,
+      ratesConfigured: true,
+      complete: false,
       turns: 0,
       toolCalls: 0,
       writeToolCalls: 0,
     };
-    const callUsage = emptyRawUsage();
     let failed = false;
     let modelEndedBadly = false;
     let aborted = signal?.aborted ?? false;
-    const emit = () => this.onProgress?.({ ...progress, usage: { ...progress.usage } });
+    const emit = () => this.onProgress?.({ ...progress, usage: { ...progress.usage }, cost: { ...progress.cost } });
     const finish = (parsed: ParsedReport, extraIssues: string[]): { report: SidekickReport; usage: Usage } => {
+      progress.complete = true;
       let gitState: GitSnapshot;
       try {
         gitState = gitSnapshot(this.cwd);
@@ -276,6 +288,7 @@ export class PersistentSidekick {
       const report: SidekickReport = {
         ...progress,
         usage: { ...progress.usage },
+        cost: { ...progress.cost },
         summary: parsed.summary,
         changedFiles: gitState.available ? gitState.changedFiles : parsed.changedFiles,
         tests: parsed.tests,
@@ -330,6 +343,11 @@ export class PersistentSidekick {
           // Add all raw Usage numeric token fields + cost category fields to a per-call raw Usage for the returned tool usage.
           // reasoning is a subset of output, never add it again to totalTokens.
           addRawUsage(callUsage, event.message.usage);
+          const message = event.message;
+          const model = session.modelRuntime?.getModel(message.provider, message.model)
+            ?? (session.model?.provider === message.provider && session.model.id === message.model ? session.model : undefined);
+          const recorded = captureCost(message.usage, model, session.modelRuntime?.getRegisteredProviderConfig(message.provider));
+          progress.ratesConfigured = progress.ratesConfigured && recorded.ratesConfigured;
           if (event.message.stopReason === "error" || event.message.stopReason === "aborted") {
             failed = true;
             modelEndedBadly = true;

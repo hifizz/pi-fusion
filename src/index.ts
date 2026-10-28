@@ -1,6 +1,7 @@
 import { Type } from "@earendil-works/pi-ai";
 import type { JsonValue } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { aggregateCosts, captureCost, formatFusionCost, formatFusionStatus } from "./costs.ts";
 import { BRIEF_DESCRIPTION, LEAD_GUIDANCE, SIDEKICK_DESCRIPTION } from "./prompts.ts";
 import { createSidekickSession, PersistentSidekick } from "./sidekick.ts";
 import type { SidekickReport, SidekickSession } from "./sidekick.ts";
@@ -18,16 +19,28 @@ export function createFusionExtension(pi: ExtensionAPI, deps: FusionExtensionDep
   });
 
   let sidekick: PersistentSidekick | undefined;
+  let selectedSidekickModel: string | undefined;
+
+  const configuredSidekickModel = (): string | undefined => {
+    const flag = pi.getFlag("fusion-sidekick-model");
+    return (typeof flag === "string" ? flag.trim() : "") || process.env.FUSION_SIDEKICK_MODEL?.trim() || undefined;
+  };
+
+  const costs = (ctx: ExtensionContext) => aggregateCosts(ctx.sessionManager.getEntries(), {
+    leadModel: ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined,
+    sidekickModel: selectedSidekickModel ?? configuredSidekickModel(),
+  });
+  const updateStatus = (ctx: ExtensionContext) => {
+    if (ctx.hasUI) ctx.ui.setStatus("fusion-cost", formatFusionStatus(costs(ctx)));
+  };
 
   const getSidekick = (ctx: ExtensionContext): PersistentSidekick => {
     if (!sidekick) {
-      const flag = pi.getFlag("fusion-sidekick-model");
-      const model =
-        (typeof flag === "string" ? flag.trim() : "") ||
-        process.env.FUSION_SIDEKICK_MODEL?.trim();
+      const model = configuredSidekickModel();
       if (!model) {
         throw new Error("Set --fusion-sidekick-model <provider>/<model> or FUSION_SIDEKICK_MODEL before using sidekick.");
       }
+      selectedSidekickModel = model;
       const runtimeCtx = ctx;
       sidekick = new PersistentSidekick({
         cwd: ctx.cwd,
@@ -35,11 +48,17 @@ export function createFusionExtension(pi: ExtensionAPI, deps: FusionExtensionDep
         createSession: () => createSession(runtimeCtx, model),
         onProgress: (progress) => {
           pi.appendEntry("fusion.sidekick_usage", progress);
+          if (progress.complete) updateStatus(runtimeCtx);
         },
       });
     }
     return sidekick;
   };
+
+  pi.registerCommand("fusion-cost", {
+    description: "Show recorded lead and sidekick tokens and estimated USD cost",
+    handler: async (_args, ctx) => { ctx.ui.notify(formatFusionCost(costs(ctx)), "info"); },
+  });
 
   pi.registerTool({
     name: "sidekick",
@@ -67,18 +86,38 @@ export function createFusionExtension(pi: ExtensionAPI, deps: FusionExtensionDep
     }
   });
 
-  pi.on("session_shutdown", async () => {
-    const current = sidekick;
-    sidekick = undefined;
-    await current?.dispose();
+  pi.on("session_start", (_event, ctx) => {
+    pi.appendEntry("fusion.models", {
+      leadModel: ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined,
+      sidekickModel: configuredSidekickModel(),
+    });
+    updateStatus(ctx);
   });
 
-  pi.on("message_end", (event) => {
-    if (event.message.role === "assistant") {
+  pi.on("session_shutdown", async (_event, ctx) => {
+    const current = sidekick;
+    sidekick = undefined;
+    selectedSidekickModel = undefined;
+    try {
+      await current?.dispose();
+    } finally {
+      if (ctx.hasUI) ctx.ui.setStatus("fusion-cost", undefined);
+    }
+  });
+
+  pi.on("turn_end", (_event, ctx) => updateStatus(ctx));
+
+  pi.on("message_end", (event, ctx) => {
+    const message = event.message;
+    if (message.role === "assistant") {
+      const model = ctx.model?.provider === message.provider && ctx.model.id === message.model
+        ? ctx.model : ctx.modelRegistry.find(message.provider, message.model);
       pi.appendEntry("fusion.lead_usage", {
-        model: `${event.message.provider}/${event.message.model}`,
-        usage: usageFromPi(event.message.usage),
+        model: `${message.provider}/${message.model}`,
+        usage: usageFromPi(message.usage),
+        ...captureCost(message.usage, model, ctx.modelRegistry.getRegisteredProviderConfig(message.provider)),
       });
+      updateStatus(ctx);
     }
   });
 }
