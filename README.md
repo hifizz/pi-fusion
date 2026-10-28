@@ -2,13 +2,15 @@ English | [简体中文](README.zh-CN.md)
 
 # pi-fusion
 
-pi-fusion adds a persistent sidekick to the [Pi coding agent](https://github.com/earendil-works/pi). Your lead model plans and reviews work while a separately configured sidekick implements it, keeping its context across requests. A local evaluation harness compares this setup with a single model on small coding tasks.
+pi-fusion adds a persistent sidekick to the [Pi coding agent](https://github.com/earendil-works/pi), inspired by [Devin Fusion](https://cognition.com/blog/devin-fusion)'s lead + sidekick pattern. Your lead model plans and reviews work while a separately configured sidekick implements it, keeping its context across requests. A local evaluation harness compares this setup with a single model on small coding tasks.
 
 **Status:** One smoke run: 1 task × 4 configs × 1 repeat; all four passed 8/8 hidden tests, but `fusion-sol+glm` hit the 300-second timeout. This is not evidence of a benefit. [Smoke report](results/smoke-2026-10-28/report.md).
 
 ## Install
 
-**Not yet on npm.** Use Node.js 24, pnpm 12.11.2, and Pi 1.4.0. No build step is needed.
+**Still in active development.** pi-fusion hasn't been published to the Pi package ecosystem (npm) yet, so please follow the manual installation steps below for now. Once published, you'll be able to install it with a single command: `pi install npm:pi-fusion`.
+
+Use Node.js 24, pnpm 12.11.2, and Pi 1.4.0. No build step is needed.
 
 ```bash
 git clone https://github.com/hifizz/pi-fusion.git

@@ -2,13 +2,15 @@
 
 # pi-fusion
 
-pi-fusion 为 [Pi 编码代理](https://github.com/earendil-works/pi) 增加一个持久 sidekick。lead 模型负责计划和审查，单独配置的 sidekick 负责实现，并在多次请求间保留上下文。仓库还提供本地评测框架，用小型编码任务比较这种协作方式与单模型的表现。
+pi-fusion 为 [Pi 编码代理](https://github.com/earendil-works/pi) 增加一个持久 sidekick，参考 [Devin Fusion](https://cognition.com/blog/devin-fusion) 的 lead + sidekick 协作方式。lead 模型负责计划和审查，单独配置的 sidekick 负责实现，并在多次请求间保留上下文。仓库还提供本地评测框架，用小型编码任务比较这种协作方式与单模型的表现。
 
 **状态：** 仅完成一次冒烟运行：1 个任务 × 4 个配置 × 1 次重复；四个配置均通过 8/8 项隐藏测试，但 `fusion-sol+glm` 达到 300 秒超时。这不能作为有收益的证据。详见[冒烟报告](results/smoke-2026-10-28/report.md)。
 
 ## 安装
 
-**尚未发布到 npm。** 需要 Node.js 24、pnpm 12.11.2 和 Pi 1.4.0，无需构建。
+**仍在积极开发中。** pi-fusion 尚未发布到 Pi 包生态（npm），目前请按下面的步骤手动安装。发布后，就可以用一行命令 `pi install npm:pi-fusion` 安装。
+
+需要 Node.js 24、pnpm 12.11.2 和 Pi 1.4.0，无需构建。
 
 ```bash
 git clone https://github.com/hifizz/pi-fusion.git
